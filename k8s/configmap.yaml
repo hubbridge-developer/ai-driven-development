@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aidd-config
+  namespace: aidd
+data:
+  # Django
+  DEBUG: "True"                      # POC — set "False" + real ALLOWED_HOSTS for prod
+  # Internal service DNS (matches the Service names in this directory)
+  REDIS_URL: "redis://aidd-redis:6379/0"
+  QDRANT_HOST: "aidd-qdrant"
+  QDRANT_PORT: "6333"
+  QDRANT_SPEC_COLLECTION: "spec_embeddings"
+  # LLM: on GKE use a managed model service (no Ollama container by default).
+  #   "claude" needs ANTHROPIC_API_KEY (in the Secret)
+  #   "vertex" uses Workload Identity + VERTEX_PROJECT below
+  LLM_PROVIDER: "claude"
+  VERTEX_PROJECT: ""
+  VERTEX_LOCATION: "us-central1"
+  # GitHub target (configurable per deployment)
+  GITHUB_OWNER: "hubbridge-developer"
+  CODE_REPO: "xspec-demo-app"
+  SPEC_REPO_NAME: "xspec-specs"
+  SPEC_REPO_URL: ""
+  # Workflow tuning
+  MAX_REVISION_CYCLES: "3"
+  CODE_CONTEXT_MAX_CHARS: "4000"
+  RUN_GENERATED_TESTS: "true"
+  TEST_RUN_TIMEOUT: "180"

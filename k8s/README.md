@@ -1,0 +1,92 @@
+# Deploying AIDD to GKE
+
+Raw Kubernetes manifests for running AI-Driven Development on Google Kubernetes
+Engine (GKE). Everything lives in the `aidd` namespace.
+
+```
+namespace.yaml     Namespace: aidd
+configmap.yaml     Non-secret config (LLM_PROVIDER, service DNS, GitHub owner…)
+secret.example.yaml  Template for secrets — copy to secret.yaml (gitignored)
+postgres.yaml      StatefulSet + headless Service + 5Gi PVC
+redis.yaml         Deployment + Service (channel layer / cache)
+qdrant.yaml        StatefulSet + Service + 5Gi PVC (vector search)
+backend.yaml       Django/Daphne Deployment + Service (aidd-api:8001)
+                   + BackendConfig (keeps WebSockets alive through the LB)
+                   + init container: migrate + seed
+frontend.yaml      SPA Deployment + Service (aidd-frontend:5173)
+ingress.yaml       GCE Ingress: /api,/ws,/admin -> backend; / -> frontend
+kustomization.yaml Ties it together + image registry overrides
+```
+
+## Prerequisites
+
+- A GKE cluster and `kubectl` context pointing at it
+- An Artifact Registry repo, e.g. `REGION-docker.pkg.dev/PROJECT_ID/aidd`
+- `LLM_PROVIDER` decided: **`claude`** (needs `ANTHROPIC_API_KEY`) or **`vertex`**
+  (GCP-native — see below). Ollama is intentionally **not** deployed here: it
+  needs GPU nodes and large models. Local/dev still uses Ollama via docker-compose.
+
+## 1. Build & push images
+
+```bash
+export REGION=us-central1 PROJECT_ID=your-project
+export REG=$REGION-docker.pkg.dev/$PROJECT_ID/aidd
+
+# Backend
+docker build -t $REG/aidd-backend:latest .
+docker push $REG/aidd-backend:latest
+
+# Frontend
+docker build -t $REG/aidd-frontend:latest ./frontend
+docker push $REG/aidd-frontend:latest
+```
+
+Then edit `kustomization.yaml` and replace `REGION`/`PROJECT_ID` in the `images:`
+block (or `kubectl kustomize` with an overlay).
+
+## 2. Create secrets (never committed)
+
+```bash
+cp k8s/secret.example.yaml k8s/secret.yaml
+# edit k8s/secret.yaml: DJANGO_SECRET_KEY, POSTGRES_PASSWORD (must match
+# DATABASE_URL), GITHUB_PAT, ANTHROPIC_API_KEY
+kubectl apply -f k8s/secret.yaml
+```
+
+## 3. Deploy everything else
+
+```bash
+kubectl apply -k k8s/
+kubectl -n aidd rollout status deploy/aidd-api
+kubectl -n aidd get pods
+```
+
+## 4. Get the URL
+
+```bash
+kubectl -n aidd get ingress aidd-ingress   # note the ADDRESS (may take a few min)
+```
+
+Open `http://<ADDRESS>/`. The SPA is served at `/`; it calls `/api` and `/ws`
+on the same host, which the Ingress routes to the backend.
+
+## Using Vertex AI (GCP-native, the "Bedrock equivalent")
+
+1. In `configmap.yaml` set `LLM_PROVIDER: "vertex"` and `VERTEX_PROJECT: your-project`.
+2. Enable **Workload Identity** on the cluster and bind the `aidd` KSA to a GSA
+   with the *Vertex AI User* role — then no key file is needed in the pod.
+3. Per-agent model overrides still work via the routing YAML
+   (`vertex_ai/gemini-1.5-pro`, etc.).
+
+## Production hardening (follow-ups, not required for a POC)
+
+- **Frontend**: replace the vite dev image with a static build served by nginx
+  on port 80 (multi-stage `node build` → `nginx`), and update `frontend.yaml`
+  port + probe. The dev server is fine for a demo but not for production.
+- **Secrets**: use Secret Manager + the CSI driver instead of a raw Secret.
+- **DB**: consider Cloud SQL (Postgres) instead of the in-cluster StatefulSet.
+- **Seeds**: move the init-container seeding into a one-shot `Job` before
+  scaling the backend beyond 1 replica.
+- **HTTPS**: uncomment the ManagedCertificate + static IP annotations in
+  `ingress.yaml` and point DNS at the reserved IP.
+- **Django**: set `DEBUG=False` and real `ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS`.

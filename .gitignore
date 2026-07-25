@@ -1,6 +1,9 @@
 # Environment
 .env
 gpt_readme.txt
+
+# Kubernetes — real secrets must never be committed
+k8s/secret.yaml
 # Python
 __pycache__/
 *.pyc

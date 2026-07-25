@@ -1,0 +1,43 @@
+# Frontend SPA. Uses the existing frontend image (vite) on 5173.
+# For production, build a static image (node build -> nginx) and serve on 80;
+# see k8s/README.md "Production hardening".
+apiVersion: v1
+kind: Service
+metadata:
+  name: aidd-frontend
+  namespace: aidd
+  labels: { app: aidd-frontend }
+spec:
+  selector: { app: aidd-frontend }
+  ports:
+    - port: 5173
+      targetPort: 5173
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aidd-frontend
+  namespace: aidd
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: aidd-frontend }
+  template:
+    metadata:
+      labels: { app: aidd-frontend }
+    spec:
+      containers:
+        - name: frontend
+          image: aidd-frontend:latest       # overridden by kustomization images:
+          ports:
+            - containerPort: 5173
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5173
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits: { cpu: "500m", memory: "512Mi" }
