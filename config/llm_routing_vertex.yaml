@@ -1,0 +1,42 @@
+# Per-agent model routing for Vertex AI (selected on GKE via LLM_ROUTING_CONFIG).
+# Cheap/fast Gemini for spec + NLP work, a stronger model for code. Every model
+# authenticates through the same Workload Identity (add-vertex SA) — no keys.
+#
+# NOTE: LiteLLM uses ONE Vertex region globally (VERTEX_LOCATION), so all model
+# ids below must be available in that region.
+#
+# To use CLAUDE for the code stage instead of Gemini:
+#   1) enable the Claude model in Vertex Model Garden,
+#   2) set VERTEX_LOCATION=us-east5 in the ConfigMap (Claude's region — and make
+#      sure the Gemini ids below are offered there too, or switch them to Claude),
+#   3) set code_developer.model to e.g. vertex_ai/claude-3-5-sonnet-v2@20241022
+
+# --- Spec / NLP: fast + cheap ---
+spec_discovery:
+  model: vertex_ai/gemini-2.0-flash-001
+  max_tokens: 1024
+  temperature: 0.0
+
+spec_generation:
+  model: vertex_ai/gemini-2.0-flash-001
+  max_tokens: 4096
+  temperature: 0.2
+
+spec_publisher:
+  model: vertex_ai/gemini-2.0-flash-001
+  max_tokens: 512
+  temperature: 0.0
+
+namespace_resolver:
+  model: vertex_ai/gemini-2.0-flash-001
+  max_tokens: 2048
+  temperature: 0.1
+
+# --- Code: stronger model ---
+code_developer:
+  # Best-quality coder. If this id isn't available in your project/region,
+  # code-gen errors — swap to vertex_ai/gemini-1.5-pro-002, or back to
+  # vertex_ai/gemini-2.0-flash-001, or a Claude-on-Vertex id (see header).
+  model: vertex_ai/gemini-2.5-pro
+  max_tokens: 8192
+  temperature: 0.2
