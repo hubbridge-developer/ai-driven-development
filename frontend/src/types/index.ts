@@ -95,6 +95,8 @@ export interface WsMessage {
   sub_step?: string;
   detail?: string;
   model?: string;
+  stage_cost_usd?: number;
+  stage_tokens?: number;
   duplicate_warning?: string | null;
   low_confidence_sections?: string[];
 }

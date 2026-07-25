@@ -137,7 +137,8 @@ def _persist_and_notify(agent_fn):
 
 
 def _send_ws_update(workflow_id: str, current_agent: str, spec_id: str = "",
-                    sub_step: str = "", detail: str = "", model: str = ""):
+                    sub_step: str = "", detail: str = "", model: str = "",
+                    stage_cost_usd: float = 0.0, stage_tokens: int = 0):
     """Send real-time WebSocket update to the frontend."""
     try:
         from channels.layers import get_channel_layer
@@ -156,6 +157,10 @@ def _send_ws_update(workflow_id: str, current_agent: str, spec_id: str = "",
                     "sub_step": sub_step,
                     "detail": detail,
                     "model": model,
+                    # Live in-progress cost/tokens of the CURRENT stage so the UI
+                    # can tick totals up between stage completions.
+                    "stage_cost_usd": round(stage_cost_usd, 6),
+                    "stage_tokens": stage_tokens,
                     "message": f"Stage completed: {current_agent}",
                 },
             },
@@ -204,10 +209,21 @@ def notify_sub_step(workflow_id: str, agent: str, sub_step: str,
     except Exception as e:
         logger.warning("activity_log_persist_failed", workflow_id=workflow_id, error=str(e))
 
+    # Current stage's running LLM cost/tokens (accumulated so far this stage).
+    stage_cost, stage_tokens = 0.0, 0
+    try:
+        from src.llm.provider import get_usage
+        u = get_usage()
+        stage_cost = float(u.get("cost_usd", 0.0))
+        stage_tokens = int(u.get("total_tokens", 0))
+    except Exception:
+        pass
+
     logger.info("sub_step_progress", workflow_id=workflow_id, agent=agent,
                 sub_step=sub_step, detail=detail or "")
     _send_ws_update(workflow_id, agent, spec_id=spec_id, sub_step=sub_step,
-                    detail=detail, model=model)
+                    detail=detail, model=model,
+                    stage_cost_usd=stage_cost, stage_tokens=stage_tokens)
 
 
 def build_workflow() -> StateGraph:

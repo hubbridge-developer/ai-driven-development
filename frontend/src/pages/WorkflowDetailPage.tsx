@@ -91,6 +91,13 @@ export default function WorkflowDetailPage() {
   const [activityLog, setActivityLog] = useState<LogEntry[]>([]);
   const logIdRef = useRef(0);
 
+  // Live metrics: a 1s ticker advances the time display while running; the
+  // current stage's in-progress LLM cost comes from WS so totals rise between
+  // stage completions instead of jumping only at the end of each stage.
+  const [, setLiveTick] = useState(0);
+  const stageStartRef = useRef<number>(Date.now());
+  const [liveStageCost, setLiveStageCost] = useState(0);
+
   // Which collapsible sections are open. The section needing attention
   // auto-expands (spec when awaiting spec approval, code when awaiting code).
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -163,6 +170,19 @@ export default function WorkflowDetailPage() {
   // Initial fetch
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Reset per-stage live counters whenever the active stage changes.
+  useEffect(() => {
+    stageStartRef.current = Date.now();
+    setLiveStageCost(0);
+  }, [workflow?.current_agent]);
+
+  // Tick every second while running so the time display advances live.
+  useEffect(() => {
+    if (workflow?.status !== 'running') return;
+    const id = setInterval(() => setLiveTick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [workflow?.status]);
+
   // Auto-open the section that currently needs attention.
   useEffect(() => {
     const st = workflow?.status;
@@ -186,6 +206,7 @@ export default function WorkflowDetailPage() {
     let latestSubStep = '';
     let latestDetail = '';
     let latestAgent = '';
+    let latestStageCost: number | null = null;
     let needsFetch = false;
 
     for (const msg of newMessages) {
@@ -195,6 +216,9 @@ export default function WorkflowDetailPage() {
       latestDetail = msg.detail || '';
       if (msg.current_agent) {
         latestAgent = msg.current_agent;
+      }
+      if (typeof msg.stage_cost_usd === 'number') {
+        latestStageCost = msg.stage_cost_usd;
       }
 
       // Accumulate activity log entries
@@ -224,6 +248,9 @@ export default function WorkflowDetailPage() {
     }
     if (newLogEntries.length > 0) {
       setActivityLog((prev) => [...prev, ...newLogEntries]);
+    }
+    if (latestStageCost !== null) {
+      setLiveStageCost(latestStageCost);
     }
     if (needsFetch) {
       fetchData();
@@ -384,21 +411,25 @@ export default function WorkflowDetailPage() {
         />
         {(() => {
           const tu = (workflow.token_usage || {}) as Record<string, number>;
-          const hasMetrics = typeof tu.total_duration_sec === 'number'
-            || typeof tu.total_cost_usd === 'number';
+          const running = workflow.status === 'running';
+          const committedDur = tu.total_duration_sec || 0;
+          const committedCost = tu.total_cost_usd || 0;
+          // While running, add the current stage's live elapsed (ticks each
+          // second) and its in-progress LLM cost (pushed per sub-step via WS).
+          const liveDur = running
+            ? committedDur + (Date.now() - stageStartRef.current) / 1000
+            : committedDur;
+          const liveCost = running ? committedCost + liveStageCost : committedCost;
+          const show = running || committedDur > 0 || committedCost > 0;
           return (
-            <Fade in={hasMetrics}>
+            <Fade in={show}>
               <Box sx={{ display: 'flex', gap: 1 }}>
-                {typeof tu.total_duration_sec === 'number' && (
-                  <Chip size="small" variant="outlined" icon={<AccessTimeIcon />}
-                    sx={{ transition: 'all .3s ease' }}
-                    label={`${tu.total_duration_sec.toFixed(1)}s total`} />
-                )}
-                {typeof tu.total_cost_usd === 'number' && (
-                  <Chip size="small" variant="outlined" color="secondary" icon={<PaidIcon />}
-                    sx={{ transition: 'all .3s ease' }}
-                    label={`$${tu.total_cost_usd.toFixed(4)} LLM`} />
-                )}
+                <Chip size="small" variant="outlined" icon={<AccessTimeIcon />}
+                  sx={{ transition: 'all .3s ease' }}
+                  label={`${liveDur.toFixed(1)}s total`} />
+                <Chip size="small" variant="outlined" color="secondary" icon={<PaidIcon />}
+                  sx={{ transition: 'all .3s ease' }}
+                  label={`$${liveCost.toFixed(4)} LLM`} />
               </Box>
             </Fade>
           );
