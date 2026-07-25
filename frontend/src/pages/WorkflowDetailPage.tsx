@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, type ReactNode, type Syntheti
 import { useParams } from 'react-router-dom';
 import {
   Container, Typography, Grid, Paper, Box, Alert, CircularProgress, Chip, Button,
-  Accordion, AccordionSummary, AccordionDetails,
+  Accordion, AccordionSummary, AccordionDetails, Fade,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -250,12 +250,24 @@ export default function WorkflowDetailPage() {
     }
   }, [workflow?.current_agent]);
 
-  // Poll as fallback (slower, since WebSocket handles real-time updates)
+  // Lightweight fallback poll: refresh only the workflow status/metrics — NOT
+  // the heavy spec/code sections (those load on stage transitions). Skip the
+  // state update entirely when nothing changed, so the page doesn't re-render /
+  // "flash" on every tick.
+  const refreshStatus = useCallback(async () => {
+    if (!workflowId) return;
+    try {
+      const wf = await getWorkflow(workflowId);
+      setWorkflow((prev) =>
+        prev && JSON.stringify(prev) === JSON.stringify(wf) ? prev : wf);
+    } catch { /* ignore transient poll errors */ }
+  }, [workflowId]);
+
   useEffect(() => {
     if (!workflow || workflow.status === 'completed' || workflow.status === 'error' || workflow.status === 'cancelled') return;
-    const interval = setInterval(fetchData, 5000);
+    const interval = setInterval(refreshStatus, 4000);
     return () => clearInterval(interval);
-  }, [workflow?.status, fetchData]);
+  }, [workflow?.status, refreshStatus]);
 
   const handleApprove = async () => {
     if (!workflowId) return;
@@ -372,17 +384,23 @@ export default function WorkflowDetailPage() {
         />
         {(() => {
           const tu = (workflow.token_usage || {}) as Record<string, number>;
+          const hasMetrics = typeof tu.total_duration_sec === 'number'
+            || typeof tu.total_cost_usd === 'number';
           return (
-            <>
-              {typeof tu.total_duration_sec === 'number' && (
-                <Chip size="small" variant="outlined" icon={<AccessTimeIcon />}
-                  label={`${tu.total_duration_sec.toFixed(1)}s total`} />
-              )}
-              {typeof tu.total_cost_usd === 'number' && (
-                <Chip size="small" variant="outlined" color="secondary" icon={<PaidIcon />}
-                  label={`$${tu.total_cost_usd.toFixed(4)} LLM`} />
-              )}
-            </>
+            <Fade in={hasMetrics}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                {typeof tu.total_duration_sec === 'number' && (
+                  <Chip size="small" variant="outlined" icon={<AccessTimeIcon />}
+                    sx={{ transition: 'all .3s ease' }}
+                    label={`${tu.total_duration_sec.toFixed(1)}s total`} />
+                )}
+                {typeof tu.total_cost_usd === 'number' && (
+                  <Chip size="small" variant="outlined" color="secondary" icon={<PaidIcon />}
+                    sx={{ transition: 'all .3s ease' }}
+                    label={`$${tu.total_cost_usd.toFixed(4)} LLM`} />
+                )}
+              </Box>
+            </Fade>
           );
         })()}
       </Box>
