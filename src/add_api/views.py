@@ -8,6 +8,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.conf import settings
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
 
 from src.add_api.models import (
     Namespace,
@@ -31,6 +33,7 @@ logger = structlog.get_logger()
 
 # --- Workflow Endpoints ---
 
+@extend_schema(tags=["Workflows"], request=WorkflowStartSerializer, responses=OpenApiTypes.OBJECT)
 @api_view(["POST"])
 def workflow_start(request):
     """POST /api/v1/workflow/start — Start a new spec-driven workflow."""
@@ -66,6 +69,7 @@ def workflow_start(request):
     )
 
 
+@extend_schema(tags=["Workflows"], responses=WorkflowRunSerializer)
 @api_view(["GET"])
 def workflow_detail(request, workflow_id):
     """GET /api/v1/workflow/{id} — Get workflow status and state."""
@@ -74,6 +78,7 @@ def workflow_detail(request, workflow_id):
     return Response(serializer.data)
 
 
+@extend_schema(tags=["Workflows"], request=None, responses=OpenApiTypes.OBJECT)
 @api_view(["POST"])
 def workflow_approve(request, workflow_id):
     """POST /api/v1/workflow/{id}/approve — Approve spec at approval gate."""
@@ -107,6 +112,7 @@ def workflow_approve(request, workflow_id):
     return Response({"status": "approved", "message": "Spec approved. Publishing..."})
 
 
+@extend_schema(tags=["Workflows"], request=WorkflowRejectSerializer, responses=OpenApiTypes.OBJECT)
 @api_view(["POST"])
 def workflow_reject(request, workflow_id):
     """POST /api/v1/workflow/{id}/reject — Reject spec with feedback."""
@@ -147,6 +153,7 @@ def workflow_reject(request, workflow_id):
     return Response({"status": "rejected", "message": "Spec rejected. Regenerating with feedback..."})
 
 
+@extend_schema(tags=["Workflows"], request=None, responses=OpenApiTypes.OBJECT)
 @api_view(["POST"])
 def workflow_cancel(request, workflow_id):
     """POST /api/v1/workflow/{id}/cancel — Cancel workflow permanently."""
@@ -187,6 +194,7 @@ def workflow_cancel(request, workflow_id):
     return Response({"status": "cancelled", "message": "Workflow cancelled."})
 
 
+@extend_schema(tags=["Workflows"], responses=OpenApiTypes.OBJECT)
 @api_view(["GET"])
 def workflow_spec(request, workflow_id):
     """GET /api/v1/workflow/{id}/spec — Get current spec content."""
@@ -211,6 +219,7 @@ def workflow_spec(request, workflow_id):
     })
 
 
+@extend_schema(tags=["Workflows"], responses=OpenApiTypes.OBJECT)
 @api_view(["GET"])
 def workflow_code(request, workflow_id):
     """GET /api/v1/workflow/{id}/code — Get generated code details."""
@@ -231,6 +240,7 @@ def workflow_code(request, workflow_id):
     })
 
 
+@extend_schema(tags=["Workflows"], request=None, responses=OpenApiTypes.OBJECT)
 @api_view(["POST"])
 def workflow_code_approve(request, workflow_id):
     """POST /api/v1/workflow/{id}/approve-code — Approve code at code approval gate."""
@@ -261,6 +271,7 @@ def workflow_code_approve(request, workflow_id):
     return Response({"status": "approved", "message": "Code approved. Merging..."} )
 
 
+@extend_schema(tags=["Workflows"], request=WorkflowRejectSerializer, responses=OpenApiTypes.OBJECT)
 @api_view(["POST"])
 def workflow_code_reject(request, workflow_id):
     """POST /api/v1/workflow/{id}/reject-code — Reject code with feedback."""
@@ -297,6 +308,7 @@ def workflow_code_reject(request, workflow_id):
     return Response({"status": "rejected", "message": "Code rejected. Regenerating with feedback..."} )
 
 
+@extend_schema(tags=["Workflows"], responses=WorkflowRunSerializer(many=True))
 @api_view(["GET"])
 def workflow_list(request):
     """GET /api/v1/workflows — List all workflows with optional status filter."""
@@ -316,6 +328,7 @@ class NamespaceViewSet(viewsets.ModelViewSet):
     lookup_field = "pk"
 
 
+@extend_schema(tags=["Specs"], responses=GeneratedSpecSerializer(many=True))
 @api_view(["GET"])
 def spec_list(request):
     """GET /api/v1/specs — List all generated specs."""
@@ -324,6 +337,7 @@ def spec_list(request):
     return Response(serializer.data)
 
 
+@extend_schema(tags=["Specs"], request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
 @api_view(["POST"])
 def spec_search(request):
     """POST /api/v1/specs/search — Semantic search across specs."""

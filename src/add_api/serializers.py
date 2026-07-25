@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.types import OpenApiTypes
 from src.add_api.models import Namespace, WorkflowRun, GeneratedSpec, SpecRepoConfig
 
 
@@ -50,6 +52,7 @@ class WorkflowRunSerializer(serializers.ModelSerializer):
             "specs",
         ]
 
+    @extend_schema_field(OpenApiTypes.OBJECT)
     def get_state_snapshot(self, obj):
         return sanitize_state_snapshot(obj.state_snapshot)
 
