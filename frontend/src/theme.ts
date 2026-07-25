@@ -13,25 +13,27 @@ export const BRAND = {
   gradientSoft: 'linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 100%)',
 };
 
-const TEAL = '#0d9488'; // primary
+const TEAL = '#0d9488'; // primary (brand)
 const PINE = '#0f5f5c'; // deep accent (dark)
-const EMERALD = '#10b981'; // secondary accent
+const AMBER = '#f59e0b'; // warm secondary accent
+const INK = '#241d14';  // warm near-black text
 
 // ---------------------------------------------------------------------------
-// Theme — a clean, modern enterprise look with soft shadows and rounded surfaces.
+// Theme — warm, approachable enterprise: emerald brand on soft cream neutrals
+// with a warm amber accent. Warmth lowers perceived effort and feels inviting.
 // ---------------------------------------------------------------------------
 export const theme = createTheme({
   palette: {
     mode: 'light',
     primary: { main: TEAL, light: '#14b8a6', dark: PINE, contrastText: '#fff' },
-    secondary: { main: EMERALD, light: '#34d399', dark: '#047857' },
+    secondary: { main: AMBER, light: '#fbbf24', dark: '#b45309' },
     success: { main: '#15803d' },
     warning: { main: '#b45309' },
     error: { main: '#b91c1c' },
     info: { main: '#0369a1' },
-    background: { default: '#f3f7f6', paper: '#ffffff' },
-    text: { primary: '#0f1f1d', secondary: '#5a6b68' },
-    divider: alpha('#0f1f1d', 0.08),
+    background: { default: '#faf6ef', paper: '#fffdf8' },
+    text: { primary: INK, secondary: '#6b6153' },
+    divider: alpha(INK, 0.09),
   },
   shape: { borderRadius: 12 },
   typography: {
@@ -47,13 +49,13 @@ export const theme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          backgroundColor: '#f3f7f6',
+          backgroundColor: '#faf6ef',
           backgroundImage:
-            'radial-gradient(1200px 600px at 100% -10%, rgba(13,148,136,0.10), transparent 60%),' +
-            'radial-gradient(900px 500px at -10% 0%, rgba(16,185,129,0.10), transparent 55%)',
+            'radial-gradient(1200px 600px at 100% -10%, rgba(245,158,11,0.10), transparent 60%),' +
+            'radial-gradient(900px 500px at -10% 0%, rgba(13,148,136,0.09), transparent 55%)',
           backgroundAttachment: 'fixed',
         },
-        '::selection': { background: alpha(TEAL, 0.18) },
+        '::selection': { background: alpha(AMBER, 0.22) },
       },
     },
     MuiPaper: {
@@ -68,7 +70,7 @@ export const theme = createTheme({
       defaultProps: { elevation: 0 },
       styleOverrides: {
         root: {
-          border: `1px solid ${alpha('#0f1f1d', 0.08)}`,
+          border: `1px solid ${alpha('#241d14', 0.08)}`,
           borderRadius: 16,
           transition: 'box-shadow .2s ease, transform .2s ease, border-color .2s ease',
         },
@@ -97,17 +99,17 @@ export const theme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          background: 'rgba(255,255,255,0.72)',
+          background: 'rgba(255,251,243,0.78)',
           backdropFilter: 'saturate(180%) blur(12px)',
-          color: '#0f1f1d',
-          borderBottom: `1px solid ${alpha('#0f1f1d', 0.08)}`,
+          color: '#241d14',
+          borderBottom: `1px solid ${alpha('#241d14', 0.08)}`,
           boxShadow: 'none',
         },
       },
     },
     MuiTooltip: {
       styleOverrides: {
-        tooltip: { borderRadius: 8, fontSize: 12, background: '#0f1f1d' },
+        tooltip: { borderRadius: 8, fontSize: 12, background: '#241d14' },
       },
     },
   },
