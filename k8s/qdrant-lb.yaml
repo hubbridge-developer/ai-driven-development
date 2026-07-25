@@ -1,0 +1,16 @@
+# POC ONLY — exposes Qdrant on a public LoadBalancer IP with NO authentication.
+# Anyone who finds the IP can read/modify/delete the vectors. Remove this (and
+# switch to port-forward, or add QDRANT__SERVICE__API_KEY) before anything real.
+apiVersion: v1
+kind: Service
+metadata:
+  name: add-qdrant-lb
+  namespace: add
+  labels: { app: add-qdrant }
+spec:
+  type: LoadBalancer
+  selector: { app: add-qdrant }
+  ports:
+    - name: http
+      port: 6333
+      targetPort: 6333

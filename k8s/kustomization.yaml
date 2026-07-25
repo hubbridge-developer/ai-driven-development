@@ -12,6 +12,7 @@ resources:
   - postgres.yaml
   - redis.yaml
   - qdrant.yaml
+  - qdrant-lb.yaml   # POC: public Qdrant dashboard (no auth) — remove for prod
   - backend.yaml
   - frontend.yaml
   - ingress.yaml
