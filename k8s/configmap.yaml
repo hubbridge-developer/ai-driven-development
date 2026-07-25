@@ -16,13 +16,15 @@ data:
   QDRANT_SPEC_COLLECTION: "spec_embeddings"
   # LLM: on GKE use a managed model service (no Ollama container by default).
   # Pick a provider by setting LLM_PROVIDER + a matching LLM_ROUTING_CONFIG:
-  #   "gemini" — Google AI Studio FREE tier. Needs GEMINI_API_KEY in the Secret.
-  #              Free/rate-limited, NOT billed to this GCP project. Good for debug.
+  #   "groq"   — Groq FREE tier. Needs GROQ_API_KEY in the Secret. Global (works
+  #              where Gemini's free tier does not), fast. Good for debug runs.
+  #   "gemini" — Google AI Studio free tier. Needs GEMINI_API_KEY. NOTE: the free
+  #              tier is NOT offered in every region (some require prepay billing).
   #   "vertex" — GCP-billed. Uses GKE Workload Identity (no key) via add-vertex SA.
   #   "claude" — needs ANTHROPIC_API_KEY in the Secret.
-  # Currently active: gemini free tier (cheapest for debug runs).
-  LLM_PROVIDER: "gemini"
-  LLM_ROUTING_CONFIG: "config/llm_routing_gemini_free.yaml"
+  # Currently active: groq free tier (free + globally available for debug).
+  LLM_PROVIDER: "groq"
+  LLM_ROUTING_CONFIG: "config/llm_routing_groq_free.yaml"
   # --- Vertex settings (used only when LLM_PROVIDER=vertex) ---
   VERTEX_PROJECT: "ai-driven-development-503519"
   VERTEX_LOCATION: "us-central1"
@@ -30,9 +32,10 @@ data:
   # To use CLAUDE via Vertex Model Garden: enable it, set VERTEX_LOCATION to a
   # region it offers (e.g. us-east5), and use vertex_ai/claude-3-5-sonnet-v2@20241022.
   VERTEX_MODEL: "vertex_ai/gemini-2.5-flash"
-  # To switch back to Vertex (billed), set the two lines above to:
-  #   LLM_PROVIDER: "vertex"
-  #   LLM_ROUTING_CONFIG: "config/llm_routing_vertex.yaml"
+  # To switch providers, set the two active lines above to one of:
+  #   groq   : LLM_PROVIDER=groq,   LLM_ROUTING_CONFIG=config/llm_routing_groq_free.yaml
+  #   gemini : LLM_PROVIDER=gemini, LLM_ROUTING_CONFIG=config/llm_routing_gemini_free.yaml
+  #   vertex : LLM_PROVIDER=vertex, LLM_ROUTING_CONFIG=config/llm_routing_vertex.yaml
   # GitHub target (configurable per deployment)
   GITHUB_OWNER: "hubbridge-developer"
   CODE_REPO: "xspec-demo-app"

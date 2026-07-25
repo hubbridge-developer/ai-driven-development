@@ -21,6 +21,7 @@ name: Deploy to GKE
 #   DJANGO_SUPERUSER_PASSWORD
 #   ANTHROPIC_API_KEY     (needed when LLM_PROVIDER=claude)
 #   GEMINI_API_KEY        (needed when LLM_PROVIDER=gemini — AI Studio free-tier key)
+#   GROQ_API_KEY          (needed when LLM_PROVIDER=groq — console.groq.com free-tier key)
 #   APP_GITHUB_PAT        the app's GitHub PAT — cannot be named GITHUB_* (reserved)
 #   ENCRYPTION_KEY        (optional; leave the secret empty if unused)
 
@@ -105,6 +106,7 @@ jobs:
             --from-literal=GITHUB_PAT="${{ secrets.APP_GITHUB_PAT }}" \
             --from-literal=ANTHROPIC_API_KEY="${{ secrets.ANTHROPIC_API_KEY }}" \
             --from-literal=GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
+            --from-literal=GROQ_API_KEY="${{ secrets.GROQ_API_KEY }}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Set images and apply manifests

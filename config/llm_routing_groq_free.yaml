@@ -1,0 +1,43 @@
+# Per-agent routing for Groq's FREE tier (fast, globally available — works in
+# regions where Gemini's free tier is not, e.g. EU/Turkey).
+#
+# Select it with:
+#   LLM_PROVIDER=groq
+#   LLM_ROUTING_CONFIG=config/llm_routing_groq_free.yaml
+#   GROQ_API_KEY=gsk_...   (free key from https://console.groq.com — no card)
+#   (LiteLLM reads GROQ_API_KEY from the environment; no other wiring needed.)
+#
+# Pattern mirrors the other routing files: a small/fast model for light NLP
+# stages, a stronger 70B model for spec generation and code.
+#
+# Free-tier caveat: Groq caps requests AND tokens per minute per model. The code
+# stage is the heaviest — if you hit 429/TPM limits, drop code_developer to
+# groq/llama-3.1-8b-instant or space out runs. Limits: console.groq.com -> Limits.
+
+# --- Light NLP: fast + cheap ---
+spec_discovery:
+  model: groq/llama-3.1-8b-instant
+  max_tokens: 1024
+  temperature: 0.0
+
+spec_publisher:
+  model: groq/llama-3.1-8b-instant
+  max_tokens: 512
+  temperature: 0.0
+
+# --- Reasoning / generation: stronger 70B ---
+spec_generation:
+  model: groq/llama-3.3-70b-versatile
+  max_tokens: 4096
+  temperature: 0.2
+
+namespace_resolver:
+  model: groq/llama-3.3-70b-versatile
+  max_tokens: 2048
+  temperature: 0.1
+
+# --- Code: strongest available on the free tier ---
+code_developer:
+  model: groq/llama-3.3-70b-versatile
+  max_tokens: 8192
+  temperature: 0.2

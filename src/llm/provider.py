@@ -32,6 +32,8 @@ PROVIDER_DEFAULTS = {
     "vertex": DEFAULT_VERTEX_MODEL,
     # Google AI Studio free tier (LiteLLM reads GEMINI_API_KEY from env).
     "gemini": "gemini/gemini-2.5-flash",
+    # Groq free tier (LiteLLM reads GROQ_API_KEY from env).
+    "groq": "groq/llama-3.3-70b-versatile",
 }
 
 # Per-agent model routing (can be overridden via config)
