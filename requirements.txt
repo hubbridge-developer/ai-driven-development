@@ -1,6 +1,7 @@
 # Django & DRF
 Django==5.1
 djangorestframework==3.15.2
+drf-spectacular==0.28.0
 django-cors-headers==4.4.0
 
 # ASGI & WebSocket

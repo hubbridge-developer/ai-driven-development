@@ -24,6 +24,8 @@ docker compose exec ollama ollama pull codellama:13b    # code developer agent
 |---|---|
 | Frontend | http://localhost:5173 |
 | API | http://localhost:8001/api/v1/ |
+| **API Docs (Swagger UI)** | **http://localhost:8001/api/v1/docs** |
+| API Docs (ReDoc) | http://localhost:8001/api/v1/redoc |
 | Django Admin | http://localhost:8001/admin/ |
 | Qdrant Dashboard | http://localhost:6333/dashboard |
 

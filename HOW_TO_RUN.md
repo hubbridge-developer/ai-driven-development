@@ -57,6 +57,9 @@ Verify with `docker compose exec ollama ollama list`.
 |---|---|
 | Frontend | http://localhost:5173 |
 | REST API | http://localhost:8001/api/v1/ |
+| **API Docs (Swagger UI)** | **http://localhost:8001/api/v1/docs** |
+| API Docs (ReDoc) | http://localhost:8001/api/v1/redoc |
+| OpenAPI schema | http://localhost:8001/api/v1/schema |
 | Django Admin | http://localhost:8001/admin/ |
 | Qdrant Dashboard | http://localhost:6333/dashboard |
 
