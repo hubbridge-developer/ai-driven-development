@@ -376,10 +376,13 @@ def _mark_workflow_error(workflow_id: str, error: str):
 
 def _run_pipeline(workflow_id: str, user_request: str):
     """Run the full pipeline in a background thread."""
-    import django
-    django.setup()
-
+    from django.db import connection, close_old_connections
     from src.graph.workflow import run_pipeline
+
+    # This runs in a daemon thread with its own DB connection: drop any stale
+    # connection on entry and close ours on exit so they don't leak across runs
+    # (an unclosed per-thread connection eventually exhausts Postgres).
+    close_old_connections()
 
     initial_state = {
         "user_request": user_request,
@@ -400,6 +403,8 @@ def _run_pipeline(workflow_id: str, user_request: str):
     except Exception as e:
         logger.error("pipeline_error", workflow_id=workflow_id, error=str(e))
         _mark_workflow_error(workflow_id, str(e))
+    finally:
+        connection.close()
 
 
 def _resume_pipeline(workflow_id: str, state: dict, gate_node: str):
@@ -409,10 +414,11 @@ def _resume_pipeline(workflow_id: str, state: dict, gate_node: str):
     rejected → revision loop), so no stage sequencing is duplicated here
     and rejections do not re-run earlier stages such as spec discovery.
     """
-    import django
-    django.setup()
-
+    from django.db import connection, close_old_connections
     from src.graph.workflow import resume_from_gate
+
+    # Daemon thread: manage the DB connection lifecycle (see _run_pipeline).
+    close_old_connections()
 
     try:
         logger.info("pipeline_resume", workflow_id=workflow_id, gate=gate_node)
@@ -422,3 +428,5 @@ def _resume_pipeline(workflow_id: str, state: dict, gate_node: str):
     except Exception as e:
         logger.error("pipeline_resume_error", workflow_id=workflow_id, error=str(e))
         _mark_workflow_error(workflow_id, str(e))
+    finally:
+        connection.close()
