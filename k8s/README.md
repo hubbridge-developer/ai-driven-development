@@ -115,7 +115,9 @@ via GKE Workload Identity:
   `workloadIdentityUser` binding for `add/add-vertex`, and the `aiplatform` API.
 - Autopilot has Workload Identity on by default — nothing else to enable.
 
-**Default model is Gemini** (`vertex_ai/gemini-2.0-flash-001`). To use **Claude
+**Default model is Gemini** (`vertex_ai/gemini-2.5-flash` for NLP,
+`vertex_ai/gemini-2.5-pro` for code — verify ids with
+`scripts/check-vertex-models.sh`). To use **Claude
 via Vertex Model Garden** instead: enable the model in Model Garden, set
 `VERTEX_LOCATION` to a region that offers it (e.g. `us-east5`, not `us-central1`),
 and set `VERTEX_MODEL: "vertex_ai/claude-3-5-sonnet-v2@20241022"`. Same SA, no key.

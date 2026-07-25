@@ -27,7 +27,7 @@ logger = structlog.get_logger()
 
 # Default Vertex model when the provider is selected but no per-agent override
 # is set. Override without code changes via the VERTEX_MODEL env var (ConfigMap).
-DEFAULT_VERTEX_MODEL = os.getenv("VERTEX_MODEL", "vertex_ai/gemini-2.0-flash-001")
+DEFAULT_VERTEX_MODEL = os.getenv("VERTEX_MODEL", "vertex_ai/gemini-2.5-flash")
 
 
 def configure_vertex() -> bool:

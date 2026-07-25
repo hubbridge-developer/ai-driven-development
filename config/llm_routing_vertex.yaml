@@ -13,22 +13,22 @@
 
 # --- Spec / NLP: fast + cheap ---
 spec_discovery:
-  model: vertex_ai/gemini-2.0-flash-001
+  model: vertex_ai/gemini-2.5-flash
   max_tokens: 1024
   temperature: 0.0
 
 spec_generation:
-  model: vertex_ai/gemini-2.0-flash-001
+  model: vertex_ai/gemini-2.5-flash
   max_tokens: 4096
   temperature: 0.2
 
 spec_publisher:
-  model: vertex_ai/gemini-2.0-flash-001
+  model: vertex_ai/gemini-2.5-flash
   max_tokens: 512
   temperature: 0.0
 
 namespace_resolver:
-  model: vertex_ai/gemini-2.0-flash-001
+  model: vertex_ai/gemini-2.5-flash
   max_tokens: 2048
   temperature: 0.1
 
@@ -36,7 +36,7 @@ namespace_resolver:
 code_developer:
   # Best-quality coder. If this id isn't available in your project/region,
   # code-gen errors — swap to vertex_ai/gemini-1.5-pro-002, or back to
-  # vertex_ai/gemini-2.0-flash-001, or a Claude-on-Vertex id (see header).
+  # vertex_ai/gemini-2.5-flash, or a Claude-on-Vertex id (see header).
   model: vertex_ai/gemini-2.5-pro
   max_tokens: 8192
   temperature: 0.2
