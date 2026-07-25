@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import {
   Box, Typography, Paper, Chip, Avatar, Divider,
-  LinearProgress, Card, CardContent, Fade, Stack,
+  Card, CardContent, Fade, Stack,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PlayCircleFilledIcon from '@mui/icons-material/PlayCircleFilled';
@@ -144,12 +144,17 @@ export default function ActivityLog({ entries, running }: Props) {
         ) : null}
       </Box>
 
-      {/* Progress bar while running */}
+      {/* Subtle "breathing" activity bar while running — calm, no sliding */}
       {running && (
-        <LinearProgress
+        <Box
           sx={{
-            height: 2,
-            '& .MuiLinearProgress-bar': { animationDuration: '1.8s' },
+            height: 3,
+            background: 'linear-gradient(90deg, #0d9488, #f59e0b)',
+            animation: 'addBreathe 2.4s ease-in-out infinite',
+            '@keyframes addBreathe': {
+              '0%, 100%': { opacity: 0.25 },
+              '50%': { opacity: 1 },
+            },
           }}
         />
       )}
