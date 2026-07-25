@@ -17,7 +17,7 @@ data:
   # LLM: on GKE use a managed model service (no Ollama container by default).
   #   "vertex" uses GKE Workload Identity (no key) — see the add-vertex SA.
   #   "claude" would instead need ANTHROPIC_API_KEY in the Secret.
-  LLM_PROVIDER: "vertex"
+  LLM_PROVIDER: "ollama"
   VERTEX_PROJECT: "ai-driven-development-503519"
   VERTEX_LOCATION: "us-central1"
   # Fallback model when no per-agent routing entry matches (see LLM_ROUTING_CONFIG).

@@ -40,6 +40,17 @@ interface PersistedLogEntry {
   timestamp: string;
 }
 
+function formatDuration(totalSeconds: number): string {
+  const seconds = Math.max(0, Math.floor(totalSeconds));
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+
+  if (hours > 0) return `${hours}h ${minutes}m ${remainingSeconds}s`;
+  if (minutes > 0) return `${minutes}m ${remainingSeconds}s`;
+  return `${remainingSeconds}s`;
+}
+
 /** Collapsible section — click the header to expand/collapse its details. */
 function Section({ title, badge, expanded, onChange, children }: {
   title: string;
@@ -426,7 +437,7 @@ export default function WorkflowDetailPage() {
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Chip size="small" variant="outlined" icon={<AccessTimeIcon />}
                   sx={{ transition: 'all .3s ease' }}
-                  label={`${liveDur.toFixed(1)}s total`} />
+                  label={`${formatDuration(liveDur)} total`} />
                 <Chip size="small" variant="outlined" color="secondary" icon={<PaidIcon />}
                   sx={{ transition: 'all .3s ease' }}
                   label={`$${liveCost.toFixed(4)} LLM`} />
