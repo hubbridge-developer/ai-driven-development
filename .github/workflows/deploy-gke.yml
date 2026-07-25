@@ -115,8 +115,8 @@ jobs:
 
       - name: Wait for rollout
         run: |
-          kubectl -n add rollout status statefulset/add-postgres --timeout=180s || true
-          kubectl -n add rollout status deploy/add-api --timeout=420s
-          kubectl -n add rollout status deploy/add-frontend --timeout=180s
+          kubectl -n add rollout status statefulset/add-postgres --timeout=300s || true
+          kubectl -n add rollout status deploy/add-api --timeout=600s
+          kubectl -n add rollout status deploy/add-frontend --timeout=300s
           echo "Ingress (external IP may take a few minutes):"
           kubectl -n add get ingress add-ingress -o wide || true
