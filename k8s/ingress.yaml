@@ -1,6 +1,6 @@
 # GKE Ingress (GCE L7 load balancer).
-#   /api  and /ws  -> backend  (add-api:8001)   [WebSockets supported natively]
-#   /            -> frontend (add-frontend:5173)
+#   /api /ws /admin /static -> backend  (add-api:8001)  [WebSockets supported]
+#   /                        -> frontend (add-frontend:5173)
 #
 # For a custom domain + HTTPS, uncomment the ManagedCertificate block, point a
 # DNS A record at the Ingress IP, and add the annotations noted below.
@@ -31,6 +31,12 @@ spec:
                 name: add-api
                 port: { number: 8001 }
           - path: /admin
+            pathType: Prefix
+            backend:
+              service:
+                name: add-api
+                port: { number: 8001 }
+          - path: /static
             pathType: Prefix
             backend:
               service:

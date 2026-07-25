@@ -67,8 +67,29 @@ kubectl -n add get pods
 kubectl -n add get ingress add-ingress   # note the ADDRESS (may take a few min)
 ```
 
-Open `http://<ADDRESS>/`. The SPA is served at `/`; it calls `/api` and `/ws`
-on the same host, which the Ingress routes to the backend.
+Open `http://<ADDRESS>/`. The SPA is served at `/`; it calls `/api`, `/ws`,
+`/admin` and `/static` on the same host, which the Ingress routes to the backend.
+
+## Automated deploy via GitHub Actions
+
+`.github/workflows/deploy-gke.yml` builds + pushes both images to Artifact
+Registry and applies these manifests on every push to `main` (keyless auth via
+Workload Identity Federation — no JSON keys in GitHub). It creates the
+`add-secrets` Secret from GitHub secrets, so `k8s/secret.yaml` is only needed for
+manual `kubectl` deploys.
+
+Configure once in **Settings ▸ Secrets and variables ▸ Actions**:
+
+**Variables:** `GCP_PROJECT_ID`, `GCP_REGION`, `AR_REPO`, `GKE_CLUSTER`, `GKE_LOCATION`
+
+**Secrets:** `WIF_PROVIDER`, `WIF_SERVICE_ACCOUNT`, `DJANGO_SECRET_KEY`,
+`DATABASE_URL`, `POSTGRES_PASSWORD`, `DJANGO_SUPERUSER_PASSWORD`,
+`ANTHROPIC_API_KEY`, `ENCRYPTION_KEY`, and `APP_GITHUB_PAT` (the app's PAT —
+GitHub reserves the `GITHUB_` secret prefix, so it must use a different name).
+
+One-time GCP setup the deployer service account needs: roles
+`roles/artifactregistry.writer` and `roles/container.developer`, plus a Workload
+Identity Pool/provider bound to this repo.
 
 ## Using Vertex AI (GCP-native, the "Bedrock equivalent")
 

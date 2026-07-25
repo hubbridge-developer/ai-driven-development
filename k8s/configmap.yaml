@@ -6,6 +6,9 @@ metadata:
 data:
   # Django
   DEBUG: "True"                      # POC — set "False" + real ALLOWED_HOSTS for prod
+  # Auto-created admin on a fresh DB (password is in the Secret). Idempotent.
+  DJANGO_SUPERUSER_USERNAME: "admin"
+  DJANGO_SUPERUSER_EMAIL: "admin@example.com"
   # Internal service DNS (matches the Service names in this directory)
   REDIS_URL: "redis://add-redis:6379/0"
   QDRANT_HOST: "add-qdrant"

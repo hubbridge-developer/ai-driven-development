@@ -20,6 +20,7 @@ metadata:
   labels: { app: add-api }
   annotations:
     cloud.google.com/backend-config: '{"default": "add-api-backendconfig"}'
+    cloud.google.com/neg: '{"ingress": true}'   # container-native LB for GKE Ingress
 spec:
   selector: { app: add-api }
   ports:
@@ -49,6 +50,8 @@ spec:
             - -c
             - >
               python manage.py migrate --noinput &&
+              python manage.py collectstatic --noinput &&
+              (python manage.py createsuperuser --noinput || true) &&
               python manage.py qdrant_create_collection &&
               python manage.py seed_namespaces &&
               python manage.py seed_spec_repo &&
