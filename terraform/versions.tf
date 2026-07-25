@@ -6,11 +6,9 @@ terraform {
       version = "~> 6.0"
     }
   }
-  # For a team, store state in a GCS bucket instead of locally:
-  # backend "gcs" {
-  #   bucket = "my-tf-state-bucket"
-  #   prefix = "add/gke"
-  # }
+  # Remote state in GCS. Bucket/prefix are supplied at init via -backend-config
+  # (see terraform/README.md) so CI and local runs share the same state.
+  backend "gcs" {}
 }
 
 provider "google" {

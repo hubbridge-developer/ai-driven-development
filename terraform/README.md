@@ -9,12 +9,23 @@ This provisions the GCP infrastructure the app is deployed onto. It is the layer
 | **k8s/** | The app itself — pods, services, ingress — inside the cluster | kustomize / kubectl |
 | **.github/workflows/** | Builds images + applies `k8s/` on every push | GitHub Actions |
 
-## One-time apply
+State lives in a **GCS bucket** (shared by local + CI). Create it once, then init
+with the bucket/prefix:
+
+```bash
+export PROJECT_ID=your-project REGION=us-central1
+gsutil mb -l $REGION gs://$PROJECT_ID-tf-state
+gsutil versioning set on gs://$PROJECT_ID-tf-state
+```
+
+## One-time apply (local)
 
 ```bash
 cd terraform
 cp terraform.tfvars.example terraform.tfvars   # fill in project_id (+ owner/repo)
-terraform init
+terraform init \
+  -backend-config="bucket=$PROJECT_ID-tf-state" \
+  -backend-config="prefix=add/gke"
 terraform plan
 terraform apply
 ```
@@ -22,6 +33,37 @@ terraform apply
 You need `gcloud auth application-default login` first (or a `GOOGLE_APPLICATION_CREDENTIALS`),
 and your user must have Owner/Editor + IAM admin on the project to create the SA
 and Workload Identity resources.
+
+## Deploy via GitHub Actions (`.github/workflows/terraform.yml`)
+
+PRs touching `terraform/**` run `plan`; pushes to `main` (and manual dispatch)
+run `apply`. Auth is keyless via WIF, using a **privileged** Terraform service
+account — distinct from the app-deploy SA, which lacks permission to manage
+clusters/IAM.
+
+**Bootstrap once (project Owner, locally)** — after the local apply above created
+the `github-pool`:
+
+```bash
+export REPO=hubbridge-developer/ai-driven-development
+gcloud iam service-accounts create add-terraform --display-name="ADD Terraform CI"
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:add-terraform@$PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/owner"
+POOL=$(gcloud iam workload-identity-pools describe github-pool --location=global --format='value(name)')
+gcloud iam service-accounts add-iam-policy-binding \
+  add-terraform@$PROJECT_ID.iam.gserviceaccount.com \
+  --role=roles/iam.workloadIdentityUser \
+  --member="principalSet://iam.googleapis.com/$POOL/attribute.repository/$REPO"
+```
+
+**GitHub config** (Settings ▸ Secrets and variables ▸ Actions):
+
+- **Variables:** `TF_STATE_BUCKET` (= `$PROJECT_ID-tf-state`), plus the existing
+  `GCP_PROJECT_ID`, `GCP_REGION` (reused; `github_owner`/`github_repo` come from
+  the Actions context automatically).
+- **Secrets:** `TF_SERVICE_ACCOUNT` (= `add-terraform@$PROJECT_ID.iam.gserviceaccount.com`),
+  `TF_WIF_PROVIDER` (same value as the `WIF_PROVIDER` output).
 
 ## Wire the outputs into GitHub
 
