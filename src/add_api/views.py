@@ -1,4 +1,4 @@
-"""REST API views for AIDD workflow management."""
+"""REST API views for ADD workflow management."""
 
 import uuid
 import threading
@@ -9,13 +9,13 @@ from rest_framework.response import Response
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 
-from src.aidd_api.models import (
+from src.add_api.models import (
     Namespace,
     WorkflowRun,
     GeneratedSpec,
     SpecRepoConfig,
 )
-from src.aidd_api.serializers import (
+from src.add_api.serializers import (
     NamespaceSerializer,
     WorkflowRunSerializer,
     WorkflowStartSerializer,

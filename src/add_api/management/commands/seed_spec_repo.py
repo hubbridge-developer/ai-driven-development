@@ -2,7 +2,7 @@
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from src.aidd_api.models import SpecRepoConfig
+from src.add_api.models import SpecRepoConfig
 
 
 class Command(BaseCommand):

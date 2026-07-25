@@ -8,7 +8,7 @@ Sub-Agents:
 import structlog
 from src.graph.state import WorkflowState
 from src.llm.provider import call_llm
-from src.aidd_api.models import Namespace
+from src.add_api.models import Namespace
 from src.agents.sub_agents.consistency_checker import check_consistency
 
 logger = structlog.get_logger()

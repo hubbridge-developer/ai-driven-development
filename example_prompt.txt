@@ -1,0 +1,1 @@
+Add a change password endpoint to the authentication system. A logged-in user submits their current password plus a new password; verify the current password is correct, enforce a minimum length of 8 characters for the new password, reject it if it matches the current password, and return a clear error message for each failure case.

@@ -1,4 +1,4 @@
-# AIDD useful commands
+# ADD useful commands
 # All GitHub commands read the PAT from .env. The PAT needs "repo" scope;
 # deleting repos additionally needs "delete_repo" scope.
 # hubbridge-developer is a USER account — use /user/repos, not /orgs/... endpoints.
@@ -8,20 +8,20 @@
 # =====================
 
 # Reset DB and re-seed
-docker compose exec aidd-api python manage.py flush --no-input
-docker compose exec aidd-api python manage.py seed_namespaces
-docker compose exec aidd-api python manage.py seed_spec_repo
-docker compose exec aidd-api python manage.py seed_repositories
+docker compose exec add-api python manage.py flush --no-input
+docker compose exec add-api python manage.py seed_namespaces
+docker compose exec add-api python manage.py seed_spec_repo
+docker compose exec add-api python manage.py seed_repositories
 
 # Reset / rebuild Qdrant vector index
-docker compose exec aidd-api python manage.py qdrant_reset
-docker compose exec aidd-api python manage.py qdrant_reindex_specs
+docker compose exec add-api python manage.py qdrant_reset
+docker compose exec add-api python manage.py qdrant_reindex_specs
 
 # One-time: strip tokens from old workflow state snapshots
-docker compose exec aidd-api python manage.py scrub_state_tokens
+docker compose exec add-api python manage.py scrub_state_tokens
 
 # Follow API logs
-docker compose logs -f aidd-api
+docker compose logs -f add-api
 
 # =====================
 # Ollama models
@@ -46,7 +46,7 @@ GITHUB_PAT=$(grep '^GITHUB_PAT=' /Users/ozgursedefoglu/Projects/ai-driven-develo
 # =====================
 
 # Create the spec repo under the user account
-GITHUB_PAT=$(grep '^GITHUB_PAT=' /Users/ozgursedefoglu/Projects/ai-driven-development/.env | head -1 | cut -d= -f2) && curl -s -X POST -H "Authorization: Bearer $GITHUB_PAT" -H "Accept: application/vnd.github+json" "https://api.github.com/user/repos" -d '{"name":"xspec-specs","description":"AIDD specification repository","private":false}' | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'{d.get(\"full_name\",\"\")} - {d.get(\"html_url\",d.get(\"message\",\"\"))}')"
+GITHUB_PAT=$(grep '^GITHUB_PAT=' /Users/ozgursedefoglu/Projects/ai-driven-development/.env | head -1 | cut -d= -f2) && curl -s -X POST -H "Authorization: Bearer $GITHUB_PAT" -H "Accept: application/vnd.github+json" "https://api.github.com/user/repos" -d '{"name":"xspec-specs","description":"ADD specification repository","private":false}' | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'{d.get(\"full_name\",\"\")} - {d.get(\"html_url\",d.get(\"message\",\"\"))}')"
 
 # Delete the spec repo (PAT needs delete_repo scope; expect 204)
 GITHUB_PAT=$(grep '^GITHUB_PAT=' /Users/ozgursedefoglu/Projects/ai-driven-development/.env | head -1 | cut -d= -f2) && curl -s -X DELETE -H "Authorization: Bearer $GITHUB_PAT" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/hubbridge-developer/xspec-specs" -w "\n%{http_code}"

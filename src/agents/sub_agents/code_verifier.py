@@ -125,7 +125,7 @@ def run_generated_tests(generated_files: list[dict], generated_tests: list[dict]
     if not test_paths:
         return {"status": "skipped", "summary": "Only Python test execution is supported."}
 
-    tmp = tempfile.mkdtemp(prefix="aidd-testrun-")
+    tmp = tempfile.mkdtemp(prefix="add-testrun-")
     try:
         root = _download_repo(target_repo, Path(tmp))
         if root is None:
@@ -139,7 +139,7 @@ def run_generated_tests(generated_files: list[dict], generated_tests: list[dict]
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text(f.get("content", ""), encoding="utf-8")
 
-        # Run in the target repo's context, not AIDD's: drop the API
+        # Run in the target repo's context, not ADD's: drop the API
         # container's DJANGO_SETTINGS_MODULE and use the one declared in the
         # target repo's manage.py.
         env = os.environ.copy()

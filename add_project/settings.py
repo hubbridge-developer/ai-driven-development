@@ -21,7 +21,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "channels",
-    "src.aidd_api",
+    "src.add_api",
 ]
 
 MIDDLEWARE = [
@@ -36,9 +36,9 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "aidd_project.urls"
-WSGI_APPLICATION = "aidd_project.wsgi.application"
-ASGI_APPLICATION = "aidd_project.asgi.application"
+ROOT_URLCONF = "add_project.urls"
+WSGI_APPLICATION = "add_project.wsgi.application"
+ASGI_APPLICATION = "add_project.asgi.application"
 
 TEMPLATES = [
     {
@@ -57,7 +57,7 @@ TEMPLATES = [
 ]
 
 # Database
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://aidd:aidd@localhost:5432/aidd")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://add:add@localhost:5432/add")
 _db_parts = DATABASE_URL.replace("postgresql://", "").replace("postgres://", "")
 _userpass, _hostdb = _db_parts.split("@")
 _user, _password = _userpass.split(":")
@@ -114,7 +114,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# --- AIDD Configuration ---
+# --- ADD Configuration ---
 
 # LLM
 # Provider: "ollama" | "litellm" | "claude" | "vertex" (Google Vertex AI, GCP-native)

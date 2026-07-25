@@ -212,7 +212,7 @@ def _check_cross_references(spec: str) -> ValidationResult:
     # Extract spec IDs referenced
     spec_ids = re.findall(r"SPEC-\w+-\d+", deps_match.group(1))
     if spec_ids:
-        from src.aidd_api.models import GeneratedSpec
+        from src.add_api.models import GeneratedSpec
 
         existing = set(
             GeneratedSpec.objects.filter(spec_id__in=spec_ids)

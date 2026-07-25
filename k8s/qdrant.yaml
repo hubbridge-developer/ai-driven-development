@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: aidd-qdrant
-  namespace: aidd
-  labels: { app: aidd-qdrant }
+  name: add-qdrant
+  namespace: add
+  labels: { app: add-qdrant }
 spec:
-  selector: { app: aidd-qdrant }
+  selector: { app: add-qdrant }
   ports:
     - name: http
       port: 6333
@@ -17,16 +17,16 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: aidd-qdrant
-  namespace: aidd
+  name: add-qdrant
+  namespace: add
 spec:
-  serviceName: aidd-qdrant
+  serviceName: add-qdrant
   replicas: 1
   selector:
-    matchLabels: { app: aidd-qdrant }
+    matchLabels: { app: add-qdrant }
   template:
     metadata:
-      labels: { app: aidd-qdrant }
+      labels: { app: add-qdrant }
     spec:
       containers:
         - name: qdrant

@@ -89,7 +89,7 @@ def code_review_handoff_agent(state: WorkflowState) -> dict:
                 json={
                     "merge_method": "squash",
                     "commit_title": f"[{spec_id}] Code implementation (squash merge)",
-                    "commit_message": f"Auto-merged by AIDD Code Review Handoff.\n\nSpec: {spec_id}",
+                    "commit_message": f"Auto-merged by ADD Code Review Handoff.\n\nSpec: {spec_id}",
                 },
                 headers=_headers(token), timeout=30,
             )
@@ -141,7 +141,7 @@ def code_review_handoff_agent(state: WorkflowState) -> dict:
 
     # Update workflow status
     try:
-        from src.aidd_api.models import WorkflowRun
+        from src.add_api.models import WorkflowRun
         wf = WorkflowRun.objects.get(workflow_id=workflow_id)
         wf.status = WorkflowRun.Status.COMPLETED
         wf.save(update_fields=["status", "updated_at"])

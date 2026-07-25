@@ -49,7 +49,7 @@ def get_default_branch_sha(owner: str, repo: str, branch: str, token: str) -> st
             json={
                 "message": "Initialize spec repository",
                 "content": base64.b64encode(
-                    f"# {repo}\n\nAIDD specification repository.\n".encode()
+                    f"# {repo}\n\nADD specification repository.\n".encode()
                 ).decode("ascii"),
             },
             headers=_headers(token),
@@ -359,6 +359,6 @@ def _render_pr_body(
 
 ---
 
-*This PR was automatically created by the AIDD spec-publisher agent.*
+*This PR was automatically created by the ADD spec-publisher agent.*
 *Review the specification file and approve to merge into the spec repository.*
 """

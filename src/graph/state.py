@@ -1,4 +1,4 @@
-"""AIDD Workflow State — shared TypedDict for all agents."""
+"""ADD Workflow State — shared TypedDict for all agents."""
 
 from typing import TypedDict, Optional
 

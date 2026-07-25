@@ -1,7 +1,7 @@
 """Seed default namespaces for the POC."""
 
 from django.core.management.base import BaseCommand
-from src.aidd_api.models import Namespace
+from src.add_api.models import Namespace
 
 
 DEFAULT_NAMESPACES = [
@@ -49,7 +49,7 @@ DEFAULT_NAMESPACES = [
 
 
 class Command(BaseCommand):
-    help = "Seed default namespaces for the AIDD POC"
+    help = "Seed default namespaces for the ADD POC"
 
     def handle(self, *args, **options):
         for ns_data in DEFAULT_NAMESPACES:

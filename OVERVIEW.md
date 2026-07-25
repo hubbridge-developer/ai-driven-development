@@ -1,8 +1,8 @@
-# AI-Driven Development (AIDD) — What It Is, In Plain Words
+# AI-Driven Development (ADD) — What It Is, In Plain Words
 
 ## The one-sentence version
 
-AIDD turns a plain-English request like *"add a password reset feature"* into
+ADD turns a plain-English request like *"add a password reset feature"* into
 finished, reviewed software changes — with a human approving the work at two
 checkpoints along the way.
 
@@ -19,7 +19,7 @@ Building software normally looks like this:
 5. It gets shipped.
 
 Every one of those steps is slow, needs a skilled person, and is easy to get
-wrong. AIDD does the repetitive parts automatically and keeps a human in
+wrong. ADD does the repetitive parts automatically and keeps a human in
 charge of the decisions that matter.
 
 ---
@@ -56,7 +56,7 @@ one end; a finished, reviewed change comes out the other. AI does the labor;
 
 ## The key idea: the AI is never fully trusted
 
-This is what makes AIDD different from "just ask ChatGPT to write code."
+This is what makes ADD different from "just ask ChatGPT to write code."
 
 - **Two human approval gates.** A person decides at both the "what" and the
   "how." The AI proposes; the human disposes.
@@ -87,7 +87,7 @@ own. A person is always the final word.
 
 ## What to remember
 
-> AIDD is an **assembly line for software changes** where **AI does the work**
+> ADD is an **assembly line for software changes** where **AI does the work**
 > and a **human signs off twice** — and nothing with failing tests can slip
 > through.
 

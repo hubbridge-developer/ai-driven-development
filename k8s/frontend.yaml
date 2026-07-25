@@ -4,11 +4,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: aidd-frontend
-  namespace: aidd
-  labels: { app: aidd-frontend }
+  name: add-frontend
+  namespace: add
+  labels: { app: add-frontend }
 spec:
-  selector: { app: aidd-frontend }
+  selector: { app: add-frontend }
   ports:
     - port: 5173
       targetPort: 5173
@@ -17,19 +17,19 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: aidd-frontend
-  namespace: aidd
+  name: add-frontend
+  namespace: add
 spec:
   replicas: 1
   selector:
-    matchLabels: { app: aidd-frontend }
+    matchLabels: { app: add-frontend }
   template:
     metadata:
-      labels: { app: aidd-frontend }
+      labels: { app: add-frontend }
     spec:
       containers:
         - name: frontend
-          image: aidd-frontend:latest       # overridden by kustomization images:
+          image: add-frontend:latest       # overridden by kustomization images:
           ports:
             - containerPort: 5173
           readinessProbe:

@@ -2,7 +2,7 @@
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from src.aidd_api.models import Namespace, Repository
+from src.add_api.models import Namespace, Repository
 
 
 # Namespaces that should point at the configured code repo. The actual repo

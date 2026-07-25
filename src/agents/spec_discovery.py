@@ -5,7 +5,7 @@ from django.conf import settings
 from src.graph.state import WorkflowState
 from src.llm.provider import call_llm
 from src.qdrant_client.service import search_specs
-from src.aidd_api.models import Namespace, GeneratedSpec
+from src.add_api.models import Namespace, GeneratedSpec
 
 logger = structlog.get_logger()
 

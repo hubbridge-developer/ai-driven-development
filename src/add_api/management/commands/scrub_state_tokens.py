@@ -5,7 +5,7 @@ target_repositories in the state snapshot. Newer runs never persist it.
 """
 
 from django.core.management.base import BaseCommand
-from src.aidd_api.models import WorkflowRun
+from src.add_api.models import WorkflowRun
 
 
 class Command(BaseCommand):

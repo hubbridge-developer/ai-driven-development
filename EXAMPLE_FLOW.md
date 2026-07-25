@@ -1,4 +1,4 @@
-# AI-Driven Development (AIDD) — Example Flow, Step by Step
+# AI-Driven Development (ADD) — Example Flow, Step by Step
 
 This document walks one concrete request through the full 10-stage pipeline and
 explains what each step does and which technology drives it.

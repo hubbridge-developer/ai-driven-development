@@ -1,4 +1,4 @@
-AIDD POC 2 — Code Generation Pipeline
+ADD POC 2 — Code Generation Pipeline
 =======================================
 
 Extends POC 1 (spec pipeline) with the code-side stages: Namespace Resolver,

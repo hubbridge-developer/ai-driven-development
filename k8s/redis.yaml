@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: aidd-redis
-  namespace: aidd
-  labels: { app: aidd-redis }
+  name: add-redis
+  namespace: add
+  labels: { app: add-redis }
 spec:
-  selector: { app: aidd-redis }
+  selector: { app: add-redis }
   ports:
     - port: 6379
       targetPort: 6379
@@ -13,15 +13,15 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: aidd-redis
-  namespace: aidd
+  name: add-redis
+  namespace: add
 spec:
   replicas: 1
   selector:
-    matchLabels: { app: aidd-redis }
+    matchLabels: { app: add-redis }
   template:
     metadata:
-      labels: { app: aidd-redis }
+      labels: { app: add-redis }
     spec:
       containers:
         - name: redis

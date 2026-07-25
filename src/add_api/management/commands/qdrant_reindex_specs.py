@@ -11,7 +11,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from src.qdrant_client.service import get_qdrant_client, create_collection, index_spec
-from src.aidd_api.models import GeneratedSpec
+from src.add_api.models import GeneratedSpec
 
 
 class Command(BaseCommand):

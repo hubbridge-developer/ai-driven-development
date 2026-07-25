@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from src.aidd_api import views
+from src.add_api import views
 
 router = DefaultRouter()
 router.register(r"namespaces", views.NamespaceViewSet, basename="namespace")

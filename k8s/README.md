@@ -1,19 +1,19 @@
-# Deploying AIDD to GKE
+# Deploying ADD to GKE
 
 Raw Kubernetes manifests for running AI-Driven Development on Google Kubernetes
-Engine (GKE). Everything lives in the `aidd` namespace.
+Engine (GKE). Everything lives in the `add` namespace.
 
 ```
-namespace.yaml     Namespace: aidd
+namespace.yaml     Namespace: add
 configmap.yaml     Non-secret config (LLM_PROVIDER, service DNS, GitHub owner…)
 secret.example.yaml  Template for secrets — copy to secret.yaml (gitignored)
 postgres.yaml      StatefulSet + headless Service + 5Gi PVC
 redis.yaml         Deployment + Service (channel layer / cache)
 qdrant.yaml        StatefulSet + Service + 5Gi PVC (vector search)
-backend.yaml       Django/Daphne Deployment + Service (aidd-api:8001)
+backend.yaml       Django/Daphne Deployment + Service (add-api:8001)
                    + BackendConfig (keeps WebSockets alive through the LB)
                    + init container: migrate + seed
-frontend.yaml      SPA Deployment + Service (aidd-frontend:5173)
+frontend.yaml      SPA Deployment + Service (add-frontend:5173)
 ingress.yaml       GCE Ingress: /api,/ws,/admin -> backend; / -> frontend
 kustomization.yaml Ties it together + image registry overrides
 ```
@@ -21,7 +21,7 @@ kustomization.yaml Ties it together + image registry overrides
 ## Prerequisites
 
 - A GKE cluster and `kubectl` context pointing at it
-- An Artifact Registry repo, e.g. `REGION-docker.pkg.dev/PROJECT_ID/aidd`
+- An Artifact Registry repo, e.g. `REGION-docker.pkg.dev/PROJECT_ID/add`
 - `LLM_PROVIDER` decided: **`claude`** (needs `ANTHROPIC_API_KEY`) or **`vertex`**
   (GCP-native — see below). Ollama is intentionally **not** deployed here: it
   needs GPU nodes and large models. Local/dev still uses Ollama via docker-compose.
@@ -30,15 +30,15 @@ kustomization.yaml Ties it together + image registry overrides
 
 ```bash
 export REGION=us-central1 PROJECT_ID=your-project
-export REG=$REGION-docker.pkg.dev/$PROJECT_ID/aidd
+export REG=$REGION-docker.pkg.dev/$PROJECT_ID/add
 
 # Backend
-docker build -t $REG/aidd-backend:latest .
-docker push $REG/aidd-backend:latest
+docker build -t $REG/add-backend:latest .
+docker push $REG/add-backend:latest
 
 # Frontend
-docker build -t $REG/aidd-frontend:latest ./frontend
-docker push $REG/aidd-frontend:latest
+docker build -t $REG/add-frontend:latest ./frontend
+docker push $REG/add-frontend:latest
 ```
 
 Then edit `kustomization.yaml` and replace `REGION`/`PROJECT_ID` in the `images:`
@@ -57,14 +57,14 @@ kubectl apply -f k8s/secret.yaml
 
 ```bash
 kubectl apply -k k8s/
-kubectl -n aidd rollout status deploy/aidd-api
-kubectl -n aidd get pods
+kubectl -n add rollout status deploy/add-api
+kubectl -n add get pods
 ```
 
 ## 4. Get the URL
 
 ```bash
-kubectl -n aidd get ingress aidd-ingress   # note the ADDRESS (may take a few min)
+kubectl -n add get ingress add-ingress   # note the ADDRESS (may take a few min)
 ```
 
 Open `http://<ADDRESS>/`. The SPA is served at `/`; it calls `/api` and `/ws`
@@ -73,7 +73,7 @@ on the same host, which the Ingress routes to the backend.
 ## Using Vertex AI (GCP-native, the "Bedrock equivalent")
 
 1. In `configmap.yaml` set `LLM_PROVIDER: "vertex"` and `VERTEX_PROJECT: your-project`.
-2. Enable **Workload Identity** on the cluster and bind the `aidd` KSA to a GSA
+2. Enable **Workload Identity** on the cluster and bind the `add` KSA to a GSA
    with the *Vertex AI User* role — then no key file is needed in the pod.
 3. Per-agent model overrides still work via the routing YAML
    (`vertex_ai/gemini-1.5-pro`, etc.).

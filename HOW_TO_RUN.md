@@ -1,4 +1,4 @@
-# How to Build and Run AI-Driven Development (AIDD)
+# How to Build and Run AI-Driven Development (ADD)
 
 Everything runs in Docker Compose — no local Python or Node installation needed.
 See `README.md` for what the platform does and how the pipeline works.
@@ -32,7 +32,7 @@ The defaults work out of the box with the local Ollama LLMs. Optional edits:
 docker compose up --build
 ```
 
-This starts 6 services: **aidd-api** (Django/Daphne, port 8001), **aidd-frontend**
+This starts 6 services: **add-api** (Django/Daphne, port 8001), **add-frontend**
 (Vite dev server, port 5173), **postgres**, **redis**, **qdrant**, and **ollama**.
 
 The API container runs its startup sequence automatically:
@@ -73,20 +73,20 @@ Verify with `docker compose exec ollama ollama list`.
 
 ```bash
 # Follow API logs
-docker compose logs -f aidd-api
+docker compose logs -f add-api
 
 # Reset everything in the DB and re-seed
-docker compose exec aidd-api python manage.py flush --no-input
-docker compose exec aidd-api python manage.py seed_namespaces
-docker compose exec aidd-api python manage.py seed_spec_repo
-docker compose exec aidd-api python manage.py seed_repositories
+docker compose exec add-api python manage.py flush --no-input
+docker compose exec add-api python manage.py seed_namespaces
+docker compose exec add-api python manage.py seed_spec_repo
+docker compose exec add-api python manage.py seed_repositories
 
 # Reset / rebuild the Qdrant vector index
-docker compose exec aidd-api python manage.py qdrant_reset
-docker compose exec aidd-api python manage.py qdrant_reindex_specs
+docker compose exec add-api python manage.py qdrant_reset
+docker compose exec add-api python manage.py qdrant_reindex_specs
 
 # One-time: strip tokens from snapshots persisted before the token-leak fix
-docker compose exec aidd-api python manage.py scrub_state_tokens
+docker compose exec add-api python manage.py scrub_state_tokens
 
 # Stop everything (add -v to also delete DB/Qdrant/Ollama volumes)
 docker compose down

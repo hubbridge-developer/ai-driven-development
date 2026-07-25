@@ -6,9 +6,9 @@ spec_generation:
   max_tokens: 4096
   temperature: 0.2
 code_developer:
-  # 13b needs ~8-9GB; it fits only because OLLAMA_MAX_LOADED_MODELS=1
-  # (docker-compose.yml) swaps mistral out before loading it. If it still
-  # gets OOM-killed, drop to codellama:7b or run Ollama natively on the host.
+  # codellama:7b (~5GB) fits comfortably in a 12GiB Colima VM. 13b OOM-killed
+  # llama-server mid-generation at this VM size; bump Colima memory to ~14GiB
+  # to go back to 13b.
   # max_tokens 8192: full-file JSON responses were truncated at 4096.
   model: ollama/codellama:13b
   max_tokens: 8192

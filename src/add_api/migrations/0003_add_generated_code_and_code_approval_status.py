@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("aidd_api", "0002_add_cancelled_status"),
+        ("add_api", "0002_add_cancelled_status"),
     ]
 
     operations = [
@@ -40,8 +40,8 @@ class Migration(migrations.Migration):
                 ("code_pr_numbers", models.JSONField(default=list)),
                 ("version", models.IntegerField(default=1)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
-                ("spec", models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name="codes", to="aidd_api.generatedspec")),
-                ("workflow_run", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="codes", to="aidd_api.workflowrun")),
+                ("spec", models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name="codes", to="add_api.generatedspec")),
+                ("workflow_run", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="codes", to="add_api.workflowrun")),
             ],
             options={
                 "ordering": ["-created_at"],

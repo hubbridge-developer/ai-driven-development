@@ -1,10 +1,10 @@
 # Backend API (Django + Channels served by Daphne).
-# Service is named "aidd-api" to match the frontend vite proxy and docker-compose.
+# Service is named "add-api" to match the frontend vite proxy and docker-compose.
 apiVersion: cloud.google.com/v1
 kind: BackendConfig
 metadata:
-  name: aidd-api-backendconfig
-  namespace: aidd
+  name: add-api-backendconfig
+  namespace: add
 spec:
   # Keep long-lived WebSocket connections (ws/workflow/{id}) from being cut by
   # the GCE L7 load balancer.
@@ -15,13 +15,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: aidd-api
-  namespace: aidd
-  labels: { app: aidd-api }
+  name: add-api
+  namespace: add
+  labels: { app: add-api }
   annotations:
-    cloud.google.com/backend-config: '{"default": "aidd-api-backendconfig"}'
+    cloud.google.com/backend-config: '{"default": "add-api-backendconfig"}'
 spec:
-  selector: { app: aidd-api }
+  selector: { app: add-api }
   ports:
     - port: 8001
       targetPort: 8001
@@ -30,20 +30,20 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: aidd-api
-  namespace: aidd
+  name: add-api
+  namespace: add
 spec:
   replicas: 1                        # scale >1 only after moving seeds to a Job
   selector:
-    matchLabels: { app: aidd-api }
+    matchLabels: { app: add-api }
   template:
     metadata:
-      labels: { app: aidd-api }
+      labels: { app: add-api }
     spec:
       # initContainer runs DB migrations + one-time seeds before Daphne starts.
       initContainers:
         - name: migrate-and-seed
-          image: aidd-backend:latest      # overridden by kustomization images:
+          image: add-backend:latest      # overridden by kustomization images:
           command:
             - sh
             - -c
@@ -54,17 +54,17 @@ spec:
               python manage.py seed_spec_repo &&
               python manage.py seed_repositories
           envFrom:
-            - configMapRef: { name: aidd-config }
-            - secretRef: { name: aidd-secrets }
+            - configMapRef: { name: add-config }
+            - secretRef: { name: add-secrets }
       containers:
         - name: api
-          image: aidd-backend:latest        # overridden by kustomization images:
-          command: ["daphne", "-b", "0.0.0.0", "-p", "8001", "aidd_project.asgi:application"]
+          image: add-backend:latest        # overridden by kustomization images:
+          command: ["daphne", "-b", "0.0.0.0", "-p", "8001", "add_project.asgi:application"]
           ports:
             - containerPort: 8001
           envFrom:
-            - configMapRef: { name: aidd-config }
-            - secretRef: { name: aidd-secrets }
+            - configMapRef: { name: add-config }
+            - secretRef: { name: add-secrets }
           readinessProbe:
             httpGet:
               path: /admin/login/     # returns 200 — used as the GCE backend health check

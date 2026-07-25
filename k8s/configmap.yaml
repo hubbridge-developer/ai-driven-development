@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: aidd-config
-  namespace: aidd
+  name: add-config
+  namespace: add
 data:
   # Django
   DEBUG: "True"                      # POC — set "False" + real ALLOWED_HOSTS for prod
   # Internal service DNS (matches the Service names in this directory)
-  REDIS_URL: "redis://aidd-redis:6379/0"
-  QDRANT_HOST: "aidd-qdrant"
+  REDIS_URL: "redis://add-redis:6379/0"
+  QDRANT_HOST: "add-qdrant"
   QDRANT_PORT: "6333"
   QDRANT_SPEC_COLLECTION: "spec_embeddings"
   # LLM: on GKE use a managed model service (no Ollama container by default).

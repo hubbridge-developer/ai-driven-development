@@ -19,7 +19,7 @@ def namespace_resolver_agent(state: WorkflowState) -> dict:
     notify_sub_step(workflow_id, "namespace_resolver", "Load Repositories", spec_id=spec_id,
                     detail=f"Querying DB for repos linked to {len(namespaces)} namespace(s): {', '.join(namespaces)}")
 
-    from src.aidd_api.models import Namespace, Repository
+    from src.add_api.models import Namespace, Repository
     from django.conf import settings
 
     target_repositories = []

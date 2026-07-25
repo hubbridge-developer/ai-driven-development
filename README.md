@@ -1,4 +1,4 @@
-# AI-Driven Development (AIDD) — Spec-Driven Delivery Platform
+# AI-Driven Development (ADD) — Spec-Driven Delivery Platform
 
 > Full build/run instructions, common operations, and troubleshooting: **[HOW_TO_RUN.md](HOW_TO_RUN.md)**
 > A worked example of one request through all 10 stages, with the technology behind each: **[EXAMPLE_FLOW.md](EXAMPLE_FLOW.md)**
@@ -247,7 +247,7 @@ Sub-steps (in order):
 
 ## Django Backend
 
-### Models (`src/aidd_api/models.py`)
+### Models (`src/add_api/models.py`)
 
 | Model | Purpose |
 |---|---|
@@ -258,7 +258,7 @@ Sub-steps (in order):
 | **GeneratedCode** | Generated code output per workflow: files + tests (JSON), implementation_summary, code PR URL/numbers, version |
 | **SpecRepoConfig** | GitHub spec repository config: spec_repo_url, branch, active flag. Auto-seeded from `SPEC_REPO_URL` env var on startup. |
 
-### REST API (`src/aidd_api/views.py`, `urls.py`)
+### REST API (`src/add_api/views.py`, `urls.py`)
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -276,7 +276,7 @@ Sub-steps (in order):
 | POST | `/api/v1/specs/search` | Semantic search across specs via Qdrant |
 | CRUD | `/api/v1/namespaces/` | Full CRUD for namespace management (ModelViewSet) |
 
-### WebSocket (`src/aidd_api/consumers.py`)
+### WebSocket (`src/add_api/consumers.py`)
 
 - Endpoint: `ws/workflow/{workflow_id}`
 - Broadcasts: agent transitions (after each stage), sub-step progress, approval notifications, completion/error events
@@ -360,7 +360,7 @@ migrate → collectstatic → qdrant_create_collection → seed_namespaces → s
 
 Standard Django uses HTTP: client sends request → server responds → connection closed. This is request-response only — the server can never push data to the client on its own.
 
-AIDD needs the server to push updates to the browser in real-time:
+ADD needs the server to push updates to the browser in real-time:
 - "Spec Discovery completed, moving to Spec Generation..."
 - "Spec Generation in progress..."
 - "Approval needed!"
@@ -431,8 +431,8 @@ poc/
 ├── config/
 │   └── llm_routing_ollama.yaml                 # Per-agent model routing (mistral:7b)
 │
-├── aidd_project/                              # Django project config
-│   ├── settings.py                             # All AIDD settings from env vars
+├── add_project/                              # Django project config
+│   ├── settings.py                             # All ADD settings from env vars
 │   ├── urls.py
 │   ├── asgi.py                                 # Channels routing (HTTP + WebSocket)
 │   └── wsgi.py
@@ -475,7 +475,7 @@ poc/
 │   ├── github/
 │   │   └── service.py                          # GitHub REST API: create_branch, commit_file, create_pull_request
 │   │
-│   └── aidd_api/
+│   └── add_api/
 │       ├── models.py                           # 6 models: Namespace, Repository, WorkflowRun, GeneratedSpec, GeneratedCode, SpecRepoConfig
 │       ├── views.py                            # REST endpoints + _run_pipeline/_resume_pipeline helpers
 │       ├── serializers.py                      # DRF serializers
@@ -494,7 +494,7 @@ poc/
 └── frontend/
     ├── Dockerfile                              # Node 20, Vite dev server
     ├── package.json                            # React 18, MUI v5, axios, react-router-dom, reconnecting-websocket
-    ├── vite.config.ts                          # Proxy /api → aidd-api:8001, /ws → aidd-api:8001
+    ├── vite.config.ts                          # Proxy /api → add-api:8001, /ws → add-api:8001
     └── src/
         ├── App.tsx                             # MUI theme, React Router, NavBar
         ├── main.tsx                            # Entry point

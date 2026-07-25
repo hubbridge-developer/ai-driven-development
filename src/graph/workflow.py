@@ -1,4 +1,4 @@
-"""AIDD LangGraph workflow definition — 10-stage spec + code pipeline."""
+"""ADD LangGraph workflow definition — 10-stage spec + code pipeline."""
 
 import uuid
 
@@ -66,7 +66,7 @@ def _persist_and_notify(agent_fn):
 
         if workflow_id and completed_agent:
             try:
-                from src.aidd_api.models import WorkflowRun
+                from src.add_api.models import WorkflowRun
                 wf = WorkflowRun.objects.get(workflow_id=workflow_id)
                 # Merge result into state_snapshot
                 snapshot = wf.state_snapshot or {}
@@ -143,7 +143,7 @@ def notify_sub_step(workflow_id: str, agent: str, sub_step: str,
 
     # Persist to activity_log in state_snapshot
     try:
-        from src.aidd_api.models import WorkflowRun
+        from src.add_api.models import WorkflowRun
         from django.utils import timezone
 
         wf = WorkflowRun.objects.get(workflow_id=workflow_id)
@@ -169,7 +169,7 @@ def notify_sub_step(workflow_id: str, agent: str, sub_step: str,
 
 
 def build_workflow() -> StateGraph:
-    """Build and compile the AIDD 10-stage pipeline."""
+    """Build and compile the ADD 10-stage pipeline."""
     workflow = StateGraph(WorkflowState)
 
     # --- POC 1 nodes ---
@@ -248,13 +248,13 @@ def build_workflow() -> StateGraph:
 
 
 # Singleton compiled graph
-aidd_graph = build_workflow()
+add_graph = build_workflow()
 
 
 def run_pipeline(workflow_id: str, initial_state: dict) -> dict:
     """Run the pipeline from the start for a new workflow."""
     config = {"configurable": {"thread_id": workflow_id}}
-    return aidd_graph.invoke(initial_state, config)
+    return add_graph.invoke(initial_state, config)
 
 
 def resume_from_gate(workflow_id: str, state: dict, gate_node: str) -> dict:
@@ -271,5 +271,5 @@ def resume_from_gate(workflow_id: str, state: dict, gate_node: str) -> dict:
     seed = {k: v for k, v in state.items() if k in channels}
 
     config = {"configurable": {"thread_id": f"{workflow_id}:{uuid.uuid4().hex[:8]}"}}
-    aidd_graph.update_state(config, seed, as_node=gate_node)
-    return aidd_graph.invoke(None, config)
+    add_graph.update_state(config, seed, as_node=gate_node)
+    return add_graph.invoke(None, config)

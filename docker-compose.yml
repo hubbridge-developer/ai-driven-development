@@ -1,5 +1,5 @@
 services:
-  aidd-api:
+  add-api:
     build:
       context: .
       dockerfile: Dockerfile
@@ -23,22 +23,22 @@ services:
              python manage.py seed_namespaces &&
              python manage.py seed_spec_repo &&
              python manage.py seed_repositories &&
-             daphne -b 0.0.0.0 -p 8001 aidd_project.asgi:application"
+             daphne -b 0.0.0.0 -p 8001 add_project.asgi:application"
     environment:
       - OLLAMA_HOST=http://ollama:11434
 
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: aidd
-      POSTGRES_PASSWORD: aidd
-      POSTGRES_DB: aidd
+      POSTGRES_USER: add
+      POSTGRES_PASSWORD: add
+      POSTGRES_DB: add
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U aidd"]
+      test: ["CMD-SHELL", "pg_isready -U add"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -61,7 +61,7 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
 
-  aidd-frontend:
+  add-frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -71,7 +71,7 @@ services:
       - ./frontend:/app
       - /app/node_modules
     depends_on:
-      - aidd-api
+      - add-api
 
   ollama:
     image: ollama/ollama:latest

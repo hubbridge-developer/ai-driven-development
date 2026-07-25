@@ -2,7 +2,7 @@
 
 import structlog
 from src.graph.state import WorkflowState
-from src.aidd_api.models import WorkflowRun
+from src.add_api.models import WorkflowRun
 
 logger = structlog.get_logger()
 

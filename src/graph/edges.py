@@ -1,4 +1,4 @@
-"""Conditional edge routing functions for the AIDD pipeline."""
+"""Conditional edge routing functions for the ADD pipeline."""
 
 from django.conf import settings
 from src.graph.state import WorkflowState

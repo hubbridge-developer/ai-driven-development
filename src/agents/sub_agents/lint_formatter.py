@@ -48,7 +48,7 @@ def _ruff_clean(files: list[dict]) -> list[dict]:
     if not any(f["path"].endswith(".py") for f in files):
         return files
 
-    with tempfile.TemporaryDirectory(prefix="aidd-lint-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="add-lint-") as tmp:
         root = Path(tmp)
         written = []
         for f in files:

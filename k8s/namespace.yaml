@@ -1,6 +1,6 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: aidd
+  name: add
   labels:
     app.kubernetes.io/part-of: ai-driven-development

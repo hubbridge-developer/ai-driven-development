@@ -1,5 +1,5 @@
 from django.contrib import admin
-from src.aidd_api.models import Namespace, WorkflowRun, GeneratedSpec, SpecRepoConfig, Repository
+from src.add_api.models import Namespace, WorkflowRun, GeneratedSpec, SpecRepoConfig, Repository
 
 
 @admin.register(Namespace)

@@ -1,19 +1,19 @@
 # GKE Ingress (GCE L7 load balancer).
-#   /api  and /ws  -> backend  (aidd-api:8001)   [WebSockets supported natively]
-#   /            -> frontend (aidd-frontend:5173)
+#   /api  and /ws  -> backend  (add-api:8001)   [WebSockets supported natively]
+#   /            -> frontend (add-frontend:5173)
 #
 # For a custom domain + HTTPS, uncomment the ManagedCertificate block, point a
 # DNS A record at the Ingress IP, and add the annotations noted below.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: aidd-ingress
-  namespace: aidd
+  name: add-ingress
+  namespace: add
   annotations:
     kubernetes.io/ingress.class: "gce"
     # --- HTTPS (optional) ---
-    # networking.gke.io/managed-certificates: "aidd-cert"
-    # kubernetes.io/ingress.global-static-ip-name: "aidd-ip"
+    # networking.gke.io/managed-certificates: "add-cert"
+    # kubernetes.io/ingress.global-static-ip-name: "add-ip"
 spec:
   rules:
     - http:
@@ -22,33 +22,33 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: aidd-api
+                name: add-api
                 port: { number: 8001 }
           - path: /ws
             pathType: Prefix
             backend:
               service:
-                name: aidd-api
+                name: add-api
                 port: { number: 8001 }
           - path: /admin
             pathType: Prefix
             backend:
               service:
-                name: aidd-api
+                name: add-api
                 port: { number: 8001 }
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: aidd-frontend
+                name: add-frontend
                 port: { number: 5173 }
 ---
 # Uncomment for managed HTTPS on a custom domain.
 # apiVersion: networking.gke.io/v1
 # kind: ManagedCertificate
 # metadata:
-#   name: aidd-cert
-#   namespace: aidd
+#   name: add-cert
+#   namespace: add
 # spec:
 #   domains:
-#     - aidd.example.com
+#     - add.example.com

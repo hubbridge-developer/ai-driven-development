@@ -66,7 +66,7 @@ class Migration(migrations.Migration):
                 ('paths', models.JSONField(blank=True, default=list)),
                 ('encrypted_token', models.BinaryField(blank=True, null=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('namespace', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='repositories', to='aidd_api.namespace')),
+                ('namespace', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='repositories', to='add_api.namespace')),
             ],
             options={
                 'unique_together': {('namespace', 'repo_slug')},
@@ -82,7 +82,7 @@ class Migration(migrations.Migration):
                 ('version', models.IntegerField(default=1)),
                 ('indexed_at', models.DateTimeField(blank=True, null=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('workflow_run', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='specs', to='aidd_api.workflowrun')),
+                ('workflow_run', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='specs', to='add_api.workflowrun')),
             ],
             options={
                 'ordering': ['-created_at'],

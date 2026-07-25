@@ -14,7 +14,7 @@ from django.utils import timezone
 from src.graph.state import WorkflowState
 from src.llm.provider import call_llm
 from src.qdrant_client.service import index_spec
-from src.aidd_api.models import WorkflowRun, GeneratedSpec, SpecRepoConfig
+from src.add_api.models import WorkflowRun, GeneratedSpec, SpecRepoConfig
 from src.github.service import publish_spec_to_github
 
 logger = structlog.get_logger()
@@ -101,9 +101,14 @@ def spec_publisher_agent(state: WorkflowState) -> dict:
             logger.warning("spec_qdrant_indexing_failed", spec_id=spec_id, error=str(e))
 
         # Step 5: Update workflow status
-        wf.state_snapshot = dict(state)
-        wf.state_snapshot["spec_pr_url"] = spec_pr_url
-        wf.state_snapshot["spec_pr_number"] = spec_pr_number
+        # Merge, don't replace: the snapshot carries keys maintained outside the
+        # graph (activity_log) that must survive. Replacing it here wiped the
+        # pre-approval activity log on resume.
+        snapshot = wf.state_snapshot or {}
+        snapshot.update(dict(state))
+        snapshot["spec_pr_url"] = spec_pr_url
+        snapshot["spec_pr_number"] = spec_pr_number
+        wf.state_snapshot = snapshot
         # Keep workflow running; current_agent will be set by the wrapper
         if wf.status != WorkflowRun.Status.RUNNING:
             wf.status = WorkflowRun.Status.RUNNING

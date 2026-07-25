@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from src.aidd_api.models import Namespace, WorkflowRun, GeneratedSpec, SpecRepoConfig
+from src.add_api.models import Namespace, WorkflowRun, GeneratedSpec, SpecRepoConfig
 
 
 class NamespaceSerializer(serializers.ModelSerializer):
