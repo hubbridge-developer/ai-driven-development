@@ -11,11 +11,17 @@ from src.aidd_api.models import Namespace, Repository
 DEFAULT_REPO_NAMESPACES = ["auth", "user-management"]
 
 
+def qualify_repo(slug: str, owner: str) -> str:
+    """Return an 'owner/name' slug, prefixing owner if none is given."""
+    slug = (slug or "").strip()
+    return slug if "/" in slug else f"{owner}/{slug}"
+
+
 class Command(BaseCommand):
     help = "Seed Repository records linking namespaces to code repos"
 
     def handle(self, *args, **options):
-        repo_slug = settings.qualify_repo(settings.CODE_REPO)
+        repo_slug = qualify_repo(settings.CODE_REPO, settings.GITHUB_OWNER)
         default_repositories = {ns: repo_slug for ns in DEFAULT_REPO_NAMESPACES}
         for ns_name, repo_slug in default_repositories.items():
             try:

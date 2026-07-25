@@ -150,12 +150,6 @@ GITHUB_OWNER = os.getenv("GITHUB_OWNER", "hubbridge-developer")
 CODE_REPO = os.getenv("CODE_REPO", "xspec-demo-app")
 SPEC_REPO_NAME = os.getenv("SPEC_REPO_NAME", "xspec-specs")
 
-
-def qualify_repo(slug: str) -> str:
-    """Return an 'owner/name' slug, prefixing GITHUB_OWNER if none is given."""
-    slug = (slug or "").strip()
-    return slug if "/" in slug else f"{GITHUB_OWNER}/{slug}"
-
 # Code generation
 MAX_CODE_REVISION_CYCLES = int(os.getenv("MAX_CODE_REVISION_CYCLES", "3"))
 CODE_CONTEXT_MAX_CHARS = int(os.getenv("CODE_CONTEXT_MAX_CHARS", "4000"))
