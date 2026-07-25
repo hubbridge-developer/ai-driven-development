@@ -1,0 +1,25 @@
+# Environment
+.env
+gpt_readme.txt
+# Python
+__pycache__/
+*.pyc
+*.pyo
+db.sqlite3
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Node
+node_modules/
+
+# Django
+staticfiles/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store

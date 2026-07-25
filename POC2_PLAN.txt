@@ -1,0 +1,581 @@
+AIDD POC 2 — Code Generation Pipeline
+=======================================
+
+Extends POC 1 (spec pipeline) with the code-side stages: Namespace Resolver,
+Code Developer (5 sub-agents), Code Publisher, Approval Gate 2, Code Review Handoff.
+
+POC 2 does NOT aim for production readiness. It proves the full end-to-end loop:
+user request → spec → approved spec → code → approved code → merged PR.
+
+===================================================================================================
+
+What POC 1 Already Delivers
+----------------------------
+
+  User Request → Spec Discovery → Spec Generation → Spec Validator → Approval Gate 1 → Spec Publisher
+                                        ↑                |                |
+                                        |       invalid (retry)           |
+                                        └──── rejected (feedback) ────────┘
+
+  - 5-stage LangGraph pipeline with conditional edges and retry loops
+  - Dual-vector Qdrant search (summary + section vectors, 384-dim)
+  - Consistency checker sub-agent (sentence-transformers, no LLM)
+  - Deterministic spec validator (XML structure, required fields)
+  - Human approval gate with WebSocket real-time updates
+  - GitHub spec publishing (branch → commit markdown → PR)
+  - React frontend with animated pipeline stepper
+  - Django + DRF + Channels + PostgreSQL + Redis + Qdrant + Ollama
+
+===================================================================================================
+
+POC 2 Pipeline — Extended 10-Stage Workflow
+---------------------------------------------
+
+  ... POC 1 stages ...
+  → Spec Publisher ──→ Namespace Resolver ──→ Code Developer ──→ Code Publisher
+                                                    ↑                  |
+                                                    |          invalid (retry)
+                                                    |                  |
+                       Approval Gate 2 ←────────────┴──────────────────┘
+                            |
+                   approved |  rejected (feedback → back to Code Developer)
+                            ↓
+                    Code Review Handoff ──→ END (squash-merge PRs)
+
+  New stages: 5, 6, 7, 8, 9
+  New sub-agents: 7 (2 under Namespace Resolver, 5 under Code Developer)
+
+===================================================================================================
+
+Stage 5 — Namespace Resolver (Agent 4)
+File: src/agents/namespace_resolver.py
+
+  Purpose: Bridge between the spec world and the code world. Maps the approved spec
+  to target code repositories and builds code context for the Code Developer.
+
+  Inputs (from state):
+    - spec_id, generated_spec, identified_namespaces (from POC 1)
+
+  Flow:
+    1. Load Namespace from PostgreSQL → get linked Repository records
+    2. Fetch stack_config (language, framework, test_framework, build_tool)
+    3. Run repo_scanner sub-agent → build file tree + dependency map via GitHub API
+    4. Run impact_analyzer sub-agent → identify affected files and blast radius
+    5. Build code_context summaries for Code Developer
+
+  Sub-Agent: Repository Scanner (sub_agents/repo_scanner.py)
+    - Calls GitHub API to list repository file tree (GET /repos/{owner}/{repo}/git/trees/{branch}?recursive=1)
+    - Builds a filtered file tree (only source files matching stack_config language)
+    - Extracts imports/dependencies from key files (package.json, requirements.txt, etc.)
+    - Returns: file_tree, dependency_map
+
+  Sub-Agent: Impact Analyzer (sub_agents/impact_analyzer.py)
+    - Takes spec requirements + file_tree + dependency_map
+    - Uses LLM to identify which files need modification/creation
+    - Determines blast radius: downstream consumers, shared modules, test files
+    - Returns: affected_files (list of paths with action: create|modify), impact_summary
+
+  POC 2 Simplifications:
+    - Single repository per namespace (no multi-repo fan-out)
+    - File tree fetched via GitHub API only (no local clone)
+    - Impact analyzer uses LLM prompt, not AST parsing
+    - No caching of repository structure between runs
+
+  New State Fields:
+    target_repositories: list[dict]     # [{owner, repo, branch, token, stack_config}]
+    affected_files: list[dict]          # [{path, action, reason}]
+    code_context: str                   # Formatted context string for Code Developer
+    impact_summary: str                 # Human-readable impact description
+
+  Key Outputs: target_repositories, affected_files, code_context, stack_config, impact_summary
+
+---
+
+Stage 6 — Code Developer (Agent 5)
+File: src/agents/code_developer.py
+
+  Purpose: Orchestrate code implementation. Does NOT write code itself — delegates
+  to 5 specialized sub-agents in sequence.
+
+  Inputs (from state):
+    - generated_spec, spec_id (what to implement)
+    - target_repositories, affected_files, code_context, stack_config (where to implement)
+    - code_rejection_feedback (if revision loop)
+
+  Orchestration Flow:
+    1. Task Planner → decompose spec into ordered implementation tasks
+    2. Code Writer → write/modify code for each task
+    3. Test Writer → generate tests from acceptance criteria
+    4. Integration Checker → validate cross-file consistency
+    5. Lint Formatter → code quality and style fixes
+
+  Sub-Agent 1: Task Planner (sub_agents/task_planner.py)
+    - Decomposes spec requirements into ordered implementation tasks
+    - Each task maps to specific files with create/modify actions
+    - Considers dependency ordering (models before views, etc.)
+    - Uses LLM with spec + affected_files as input
+    - Returns: implementation_tasks (list of {task_id, description, files, depends_on})
+
+  Sub-Agent 2: Code Writer (sub_agents/code_writer.py)
+    - Iterates through implementation_tasks in dependency order
+    - For each task: generates code using LLM
+    - LLM receives: spec_content (full), code_context (truncated to fit token budget),
+      task description, existing file content (if modify action)
+    - Output format: structured JSON with {path, action, content} per file
+      (POC 2 improvement over doc's 6-regex pattern approach — see enhancements.txt §2.1)
+    - Returns: generated_files (list of {path, action, content, language})
+
+  Sub-Agent 3: Test Writer (sub_agents/test_writer.py)
+    - Generates unit and integration tests from spec's acceptance_criteria section
+    - Each acceptance criterion becomes one or more test cases
+    - Uses stack_config.test_framework to determine test style (pytest, jest, etc.)
+    - Receives generated_files as context so tests can import/reference actual code
+    - Returns: generated_tests (list of {path, content, test_type})
+
+  Sub-Agent 4: Integration Checker (sub_agents/integration_checker.py)
+    - Validates cross-file consistency of generated_files + generated_tests
+    - Checks: import paths resolve, function signatures match call sites,
+      type annotations consistent, no circular dependencies
+    - Uses LLM to review the full set of changes as a whole
+    - Returns: integration_issues (list of {severity, file, description})
+    - If critical issues found → Code Developer loops back to Code Writer with issues as context
+
+  Sub-Agent 5: Lint Formatter (sub_agents/lint_formatter.py)
+    - Last agent to touch code before publishing
+    - Applies language-appropriate formatting rules
+    - For POC 2: LLM-based formatting (ask LLM to fix style issues)
+      Production would use actual linters (ruff, eslint, prettier)
+    - Returns: final_files (the cleaned-up version of generated_files + generated_tests)
+
+  POC 2 Simplifications:
+    - Code Writer uses structured JSON output (not markdown code blocks)
+    - Integration Checker is LLM-based review (not actual import resolution)
+    - Lint Formatter is LLM-based (not real linter execution)
+    - No actual code execution or test running — just generation
+    - Token budget: code_context capped at 4000 chars (per enhancement §2.3)
+    - Internal retry: if integration_checker finds critical issues, retry code_writer once
+      (not full pipeline retry)
+
+  New State Fields:
+    implementation_tasks: list[dict]    # From task_planner
+    generated_files: list[dict]         # {path, action, content, language}
+    generated_tests: list[dict]         # {path, content, test_type}
+    integration_issues: list[dict]      # {severity, file, description}
+    implementation_summary: str         # Human-readable summary of all changes
+    code_revision_count: int            # Revision counter (max 3)
+    code_rejection_feedback: str        # Feedback from Approval Gate 2
+
+  Key Outputs: generated_files, generated_tests, implementation_summary, implementation_tasks
+
+---
+
+Stage 7 — Code Publisher (Agent 5.5)
+File: src/agents/code_publisher.py
+
+  Purpose: Push generated code to target repositories via GitHub API and open PRs.
+
+  Inputs (from state):
+    - generated_files, generated_tests (what to push)
+    - target_repositories (where to push)
+    - spec_id, implementation_summary (for commit messages and PR body)
+
+  Flow:
+    1. Group files by target repository
+    2. For each repository:
+       a. Get base branch SHA
+       b. Create feature branch: code/{spec-id-lowercase}
+       c. Commit all files atomically using GitHub Git Data API:
+          - Create blobs for each file
+          - Build tree from blobs
+          - Create commit pointing to tree
+          - Update branch ref to commit
+       d. Open pull request with implementation_summary as body
+    3. Collect all PR URLs and numbers
+
+  GitHub Git Data API Flow (atomic multi-file commit):
+    POST /repos/{owner}/{repo}/git/blobs          → create blob for each file
+    POST /repos/{owner}/{repo}/git/trees          → create tree referencing all blobs
+    POST /repos/{owner}/{repo}/git/commits        → create commit with tree + parent
+    PATCH /repos/{owner}/{repo}/git/refs/heads/{branch}  → update branch to new commit
+
+  POC 2 Simplifications:
+    - Single repository (no multi-repo fan-out, but code supports it)
+    - No diff-based commits (pushes full file content, not patches)
+    - No conflict detection (assumes clean branch)
+
+  New State Fields:
+    code_pr_url: str                    # Primary PR URL
+    code_pr_numbers: list[dict]         # [{repo, pr_number, pr_url, files}]
+    code_published: bool
+
+  Key Outputs: code_pr_url, code_pr_numbers, code_published
+
+---
+
+Stage 8 — Approval Gate 2 (Code Review)
+File: src/approval/gate.py → code_approval_gate_node
+
+  Purpose: Human review of generated code before automated merge.
+
+  Mechanism: Same as Approval Gate 1 but for code.
+    - Sets WorkflowRun.status to WAITING_CODE_APPROVAL
+    - Frontend shows: implementation summary, file list with changes, link to GitHub PR diff
+    - Three outcomes:
+      - Approve → proceeds to Code Review Handoff
+      - Reject with feedback → loops back to Code Developer (code_revision_count++)
+      - Pending → workflow suspended
+
+  POC 2 Simplifications:
+    - No React DiffViewer component (link to GitHub PR diff instead)
+    - Rejection loops to Code Developer only (no "spec_issue" path back to spec)
+    - Max 3 code revision cycles
+
+  New State Fields:
+    code_approval_status: str           # "pending" | "approved" | "rejected"
+
+  Key Outputs: code_approval_status, code_rejection_feedback
+
+---
+
+Stage 9 — Code Review Handoff (Agent 6)
+File: src/agents/code_review_handoff.py
+
+  Purpose: Final validation and merge. In the full system this invokes a
+  separate code-review-agent. In POC 2, this is simplified to auto-merge.
+
+  Flow (POC 2 simplified):
+    1. For each PR in code_pr_numbers:
+       a. Check PR is still open and mergeable via GitHub API
+       b. Squash-merge via PUT /repos/{owner}/{repo}/pulls/{number}/merge
+       c. Log result (success or failure)
+    2. Merge failures are non-fatal (PRs remain open for manual merge)
+    3. Set final_status = "completed"
+    4. Send WebSocket notification
+
+  Full System (not in POC 2):
+    - Invoke code-review-agent with PR URL + full spec as review context
+    - Code-review-agent performs: style review, spec compliance check, security scan
+    - If critical issues → set final_status = "review-failed", loop to Code Developer
+    - If review passes → squash-merge
+
+  POC 2 Simplifications:
+    - No code-review-agent integration (auto-merge on approval)
+    - No spec-compliance checking
+    - No "review-failed" → Code Developer loop
+    - Just merge the approved PRs and mark complete
+
+  Key Outputs: final_status, merge_results
+
+===================================================================================================
+
+New Django Models
+------------------
+
+  No new models required for POC 2. The existing models are sufficient:
+
+  - WorkflowRun.state_snapshot — stores all new state fields as JSON
+  - WorkflowRun.status — add new status: WAITING_CODE_APPROVAL
+  - Repository model — already exists (unused in POC 1), activate it for Namespace Resolver
+  - GeneratedSpec — already stores the published spec
+
+  Optional addition for better visibility:
+
+  class GeneratedCode(models.Model):
+      """Track generated code output per workflow."""
+      workflow = models.ForeignKey(WorkflowRun, on_delete=models.CASCADE)
+      spec = models.ForeignKey(GeneratedSpec, on_delete=models.CASCADE)
+      files = models.JSONField()              # [{path, action, content, language}]
+      tests = models.JSONField()              # [{path, content, test_type}]
+      implementation_summary = models.TextField()
+      code_pr_url = models.URLField(null=True)
+      code_pr_numbers = models.JSONField(default=list)
+      version = models.IntegerField(default=1)
+      created_at = models.DateTimeField(auto_now_add=True)
+
+===================================================================================================
+
+New REST API Endpoints
+-----------------------
+
+  Existing endpoints unchanged. New additions:
+
+  ┌────────┬────────────────────────────────────┬──────────────────────────────────────────────────────┐
+  │ Method │             Endpoint               │                     Description                      │
+  ├────────┼────────────────────────────────────┼──────────────────────────────────────────────────────┤
+  │ POST   │ /api/v1/workflow/{id}/approve-code │ Approve code at Gate 2, resume to review handoff     │
+  ├────────┼────────────────────────────────────┼──────────────────────────────────────────────────────┤
+  │ POST   │ /api/v1/workflow/{id}/reject-code  │ Reject code with feedback, loop to Code Developer    │
+  ├────────┼────────────────────────────────────┼──────────────────────────────────────────────────────┤
+  │ GET    │ /api/v1/workflow/{id}/code         │ Get generated code: files, tests, summary, PR links  │
+  └────────┴────────────────────────────────────┴──────────────────────────────────────────────────────┘
+
+===================================================================================================
+
+Updated LangGraph Workflow
+---------------------------
+
+  _STAGE_ORDER = [
+      # POC 1 stages
+      "spec_discovery",
+      "spec_generator",
+      "spec_validator",
+      "spec_approval_gate",
+      "spec_publisher",
+      # POC 2 stages
+      "namespace_resolver",
+      "code_developer",
+      "code_publisher",
+      "code_approval_gate",
+      "code_review_handoff",
+  ]
+
+  New edges:
+    spec_publisher → namespace_resolver (always)
+    namespace_resolver → code_developer (always)
+    code_developer → code_publisher (always)
+    code_publisher → code_approval_gate (always)
+
+  New conditional edges:
+    code_approval_gate → code_review_handoff (approved)
+    code_approval_gate → code_developer (rejected, with feedback)
+    code_approval_gate → END (pending, workflow suspended)
+    code_review_handoff → END (completed)
+
+===================================================================================================
+
+Updated WorkflowState
+---------------------------
+
+  Add to src/graph/state.py:
+
+  class AffectedFile(TypedDict):
+      path: str
+      action: str            # "create" | "modify"
+      reason: str
+
+  class GeneratedFile(TypedDict):
+      path: str
+      action: str            # "create" | "modify"
+      content: str
+      language: str
+
+  class GeneratedTest(TypedDict):
+      path: str
+      content: str
+      test_type: str         # "unit" | "integration"
+
+  class ImplementationTask(TypedDict):
+      task_id: str
+      description: str
+      files: list[str]
+      depends_on: list[str]
+
+  class CodePR(TypedDict):
+      repo: str
+      pr_number: int
+      pr_url: str
+      files: list[str]
+
+  # New fields on WorkflowState:
+  # --- Namespace Resolver outputs ---
+  target_repositories: list[dict]
+  affected_files: list[AffectedFile]
+  code_context: str
+  impact_summary: str
+
+  # --- Code Developer outputs ---
+  implementation_tasks: list[ImplementationTask]
+  generated_files: list[GeneratedFile]
+  generated_tests: list[GeneratedTest]
+  integration_issues: list[dict]
+  implementation_summary: str
+
+  # --- Code Publisher outputs ---
+  code_pr_url: Optional[str]
+  code_pr_numbers: list[CodePR]
+  code_published: bool
+
+  # --- Approval Gate 2 ---
+  code_approval_status: str            # "pending" | "approved" | "rejected"
+  code_rejection_feedback: str
+  code_revision_count: int
+
+  # --- Code Review Handoff ---
+  merge_results: list[dict]            # [{repo, pr_number, merged, error}]
+
+===================================================================================================
+
+Frontend Changes
+-----------------
+
+  Pipeline Stepper: Update PIPELINE_STAGES to include all 10 stages.
+
+  PIPELINE_STAGES = [
+    { key: 'spec_discovery',       label: 'Spec Discovery' },
+    { key: 'spec_generator',       label: 'Spec Generation' },
+    { key: 'spec_validator',       label: 'Spec Validation' },
+    { key: 'spec_approval_gate',   label: 'Spec Approval' },
+    { key: 'spec_publisher',       label: 'Spec Publisher' },
+    { key: 'namespace_resolver',   label: 'Namespace Resolver' },
+    { key: 'code_developer',       label: 'Code Developer' },
+    { key: 'code_publisher',       label: 'Code Publisher' },
+    { key: 'code_approval_gate',   label: 'Code Approval' },
+    { key: 'code_review_handoff',  label: 'Code Review & Merge' },
+  ]
+
+  New Components:
+    - CodeViewer.tsx — display generated files and tests (syntax highlighted, collapsible per file)
+    - CodeApprovalDialog.tsx — approve/reject code with feedback (similar to ApprovalDialog)
+    - ImpactSummary.tsx — show affected files and impact analysis from namespace resolver
+
+  WorkflowDetailPage Changes:
+    - After spec approval, right panel switches from SpecViewer to CodeViewer
+    - Show implementation_summary, file list with language tags, test count
+    - Link to GitHub code PR (like spec PR link)
+    - Second approval dialog for code review gate
+    - Final completion shows merge results
+
+  New Page (optional):
+    - CodeDetailPage.tsx — dedicated page for reviewing generated code with file-by-file view
+
+===================================================================================================
+
+New File Structure (POC 2 additions only)
+-------------------------------------------
+
+  src/agents/
+  ├── namespace_resolver.py              # Stage 5: map spec → repos
+  ├── code_developer.py                  # Stage 6: orchestrate 5 sub-agents
+  ├── code_publisher.py                  # Stage 7: push code to GitHub
+  ├── code_review_handoff.py             # Stage 9: merge PRs
+  └── sub_agents/
+      ├── consistency_checker.py         # (existing from POC 1)
+      ├── repo_scanner.py               # Namespace Resolver sub-agent: file tree + deps
+      ├── impact_analyzer.py            # Namespace Resolver sub-agent: blast radius
+      ├── task_planner.py               # Code Developer sub-agent: decompose spec → tasks
+      ├── code_writer.py                # Code Developer sub-agent: generate code per task
+      ├── test_writer.py                # Code Developer sub-agent: generate tests
+      ├── integration_checker.py        # Code Developer sub-agent: cross-file validation
+      └── lint_formatter.py             # Code Developer sub-agent: code quality
+
+  src/graph/
+  ├── state.py                           # Extended with new TypedDicts and fields
+  ├── edges.py                           # New: route_after_code_approval, route_after_review
+  └── workflow.py                        # Extended: 10 nodes, new conditional edges
+
+  frontend/src/
+  ├── components/
+  │   ├── CodeViewer.tsx                 # Generated code file viewer
+  │   ├── CodeApprovalDialog.tsx         # Code approval UI
+  │   └── ImpactSummary.tsx              # Affected files display
+  └── types/index.ts                     # Extended with code-side interfaces
+
+===================================================================================================
+
+POC 2 Enhancements Over Documentation
+---------------------------------------
+
+  These improvements from enhancements.txt are incorporated into POC 2:
+
+  1. Structured JSON output from Code Writer (§2.1)
+     - Instead of 6 regex patterns to parse LLM markdown, Code Writer returns structured JSON:
+       {"files": [{"path": "...", "action": "create|modify", "content": "..."}]}
+     - Eliminates all regex parsing in Code Publisher
+
+  2. Smart context truncation (§2.3)
+     - code_context capped at 4000 chars (up from 2000)
+     - Truncation at function/class boundaries (not mid-line)
+     - Imports + class signatures always included
+
+  3. PostgreSQL-only state (§1.1)
+     - No Redis session state — PostgreSQL is sole source of truth for workflow state
+     - Redis used only for: Channels layer (WebSocket)
+
+  Deferred to production (not in POC 2):
+  - Active duplicate blocking (§2.4) — still informational warning only
+  - Spec feedback from code review (§2.5) — rejection goes to Code Developer only
+  - Configurable embedding model (§2.6) — still all-MiniLM-L6-v2
+  - Spec version history (§3.1) — still overwrites in state
+  - Deployment monitor / rollback (§3.2) — out of scope
+
+===================================================================================================
+
+Configuration (.env additions)
+-------------------------------
+
+  # Code repository (target for code generation — different from spec repo)
+  CODE_REPO_URL=https://github.com/{owner}/{code-repo}
+
+  # Code generation settings
+  MAX_CODE_REVISION_CYCLES=3            # Max code revision attempts
+  CODE_CONTEXT_MAX_CHARS=4000           # Context window for code writer
+  AUTO_MERGE_ON_APPROVAL=true           # Auto squash-merge in review handoff
+
+===================================================================================================
+
+Implementation Order
+---------------------
+
+  Phase A — State & Workflow Skeleton
+    1. Extend WorkflowState with all new fields
+    2. Add new edge routes: route_after_code_approval
+    3. Wire 10-node LangGraph workflow (stub agents returning dummy state)
+    4. Add WAITING_CODE_APPROVAL to WorkflowRun.Status
+    5. Verify full pipeline runs end-to-end with stubs
+
+  Phase B — Namespace Resolver
+    6. Activate Repository model (link to Namespace)
+    7. Build repo_scanner sub-agent (GitHub tree API)
+    8. Build impact_analyzer sub-agent (LLM-based)
+    9. Build namespace_resolver agent (orchestrates sub-agents)
+    10. Seed a test repository in Docker startup
+
+  Phase C — Code Developer (the big one)
+    11. Build task_planner sub-agent
+    12. Build code_writer sub-agent (structured JSON output)
+    13. Build test_writer sub-agent
+    14. Build integration_checker sub-agent
+    15. Build lint_formatter sub-agent
+    16. Build code_developer orchestrator (sequences all 5)
+    17. Add internal retry (integration issues → re-run code_writer)
+
+  Phase D — Code Publisher + Gates
+    18. Build code_publisher agent (Git Data API for atomic commits)
+    19. Add code_approval_gate_node to approval/gate.py
+    20. Add approve-code / reject-code API endpoints
+    21. Build code_review_handoff agent (squash-merge)
+
+  Phase E — Frontend
+    22. Update PIPELINE_STAGES (10 stages)
+    23. Build CodeViewer component
+    24. Build CodeApprovalDialog component
+    25. Extend WorkflowDetailPage (code section after spec approval)
+    26. Add code PR link and merge status display
+
+===================================================================================================
+
+What's Still NOT in POC 2
+--------------------------
+
+  - Code-review-agent integration — POC 2 does auto-merge, not AI code review
+  - Multi-repository fan-out — supports one code repo per namespace
+  - Actual code execution / test running — generates code but doesn't run it
+  - Real linting (ruff, eslint) — uses LLM-based formatting instead
+  - Spec versioning / diff tracking — still overwrites in state
+  - Spec feedback loop from code review — rejection goes to Code Developer only
+  - MCP server integration — no tool-use protocol
+  - Elasticsearch / Kibana observability — structlog only
+  - Guardrails / prompt injection detection
+  - Local code clone / AST parsing — all via GitHub API
+  - Active duplicate blocking (§2.4) — still informational warning only
+  - Spec feedback from code review (§2.5) — rejection goes to Code Developer only
+  - Configurable embedding model (§2.6) — still all-MiniLM-L6-v2
+  - Spec version history (§3.1) — still overwrites in state
+  - Deployment monitor / rollback (§3.2) — out of scope
+
+
+6 Nisan Pazartesi;
+08:30 = Renaldy Johan
+09:00 = Dama Samudera
+09:30 = Muhammad Fadhil
+

@@ -1,0 +1,77 @@
+# AIDD useful commands
+# All GitHub commands read the PAT from .env. The PAT needs "repo" scope;
+# deleting repos additionally needs "delete_repo" scope.
+# hubbridge-developer is a USER account — use /user/repos, not /orgs/... endpoints.
+
+# =====================
+# Docker stack
+# =====================
+
+# Reset DB and re-seed
+docker compose exec aidd-api python manage.py flush --no-input
+docker compose exec aidd-api python manage.py seed_namespaces
+docker compose exec aidd-api python manage.py seed_spec_repo
+docker compose exec aidd-api python manage.py seed_repositories
+
+# Reset / rebuild Qdrant vector index
+docker compose exec aidd-api python manage.py qdrant_reset
+docker compose exec aidd-api python manage.py qdrant_reindex_specs
+
+# One-time: strip tokens from old workflow state snapshots
+docker compose exec aidd-api python manage.py scrub_state_tokens
+
+# Follow API logs
+docker compose logs -f aidd-api
+
+# =====================
+# Ollama models
+# =====================
+
+# Pull models (spec agents / code developer)
+docker compose exec ollama ollama pull mistral:7b
+docker compose exec ollama ollama pull codellama:13b
+
+# List downloaded models
+docker compose exec ollama ollama list
+
+# =====================
+# GitHub — token check
+# =====================
+
+# Verify the PAT works and show which account it belongs to
+GITHUB_PAT=$(grep '^GITHUB_PAT=' /Users/ozgursedefoglu/Projects/ai-driven-development/.env | head -1 | cut -d= -f2) && curl -s -H "Authorization: Bearer $GITHUB_PAT" https://api.github.com/user | python3 -c "import sys,json; print(json.load(sys.stdin).get('login','(bad credentials)'))"
+
+# =====================
+# GitHub — spec repo management (hubbridge-developer/xspec-specs)
+# =====================
+
+# Create the spec repo under the user account
+GITHUB_PAT=$(grep '^GITHUB_PAT=' /Users/ozgursedefoglu/Projects/ai-driven-development/.env | head -1 | cut -d= -f2) && curl -s -X POST -H "Authorization: Bearer $GITHUB_PAT" -H "Accept: application/vnd.github+json" "https://api.github.com/user/repos" -d '{"name":"xspec-specs","description":"AIDD specification repository","private":false}' | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'{d.get(\"full_name\",\"\")} - {d.get(\"html_url\",d.get(\"message\",\"\"))}')"
+
+# Delete the spec repo (PAT needs delete_repo scope; expect 204)
+GITHUB_PAT=$(grep '^GITHUB_PAT=' /Users/ozgursedefoglu/Projects/ai-driven-development/.env | head -1 | cut -d= -f2) && curl -s -X DELETE -H "Authorization: Bearer $GITHUB_PAT" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/hubbridge-developer/xspec-specs" -w "\n%{http_code}"
+
+# List all branches
+GITHUB_PAT=$(grep '^GITHUB_PAT=' /Users/ozgursedefoglu/Projects/ai-driven-development/.env | head -1 | cut -d= -f2) && curl -s -H "Authorization: Bearer $GITHUB_PAT" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/hubbridge-developer/xspec-specs/branches?per_page=100" | python3 -c "import sys,json; [print(b['name']) for b in json.load(sys.stdin)]"
+
+# Delete ALL spec/* branches
+GITHUB_PAT=$(grep '^GITHUB_PAT=' /Users/ozgursedefoglu/Projects/ai-driven-development/.env | head -1 | cut -d= -f2) && for BRANCH in $(curl -s -H "Authorization: Bearer $GITHUB_PAT" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/hubbridge-developer/xspec-specs/branches?per_page=100" | python3 -c "import sys,json; [print(b['name']) for b in json.load(sys.stdin) if b['name'].startswith('spec/')]"); do curl -s -o /dev/null -w "Deleted $BRANCH (%{http_code})\n" -X DELETE -H "Authorization: Bearer $GITHUB_PAT" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/hubbridge-developer/xspec-specs/git/refs/heads/$BRANCH"; done
+
+# List open PRs
+GITHUB_PAT=$(grep '^GITHUB_PAT=' /Users/ozgursedefoglu/Projects/ai-driven-development/.env | head -1 | cut -d= -f2) && curl -s -H "Authorization: Bearer $GITHUB_PAT" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/hubbridge-developer/xspec-specs/pulls?state=open&per_page=100" | python3 -c "import sys,json; [print(f'{p[\"number\"]} {p[\"title\"]}') for p in json.load(sys.stdin)]"
+
+# List closed PRs
+GITHUB_PAT=$(grep '^GITHUB_PAT=' /Users/ozgursedefoglu/Projects/ai-driven-development/.env | head -1 | cut -d= -f2) && curl -s -H "Authorization: Bearer $GITHUB_PAT" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/hubbridge-developer/xspec-specs/pulls?state=closed&per_page=100" | python3 -c "import sys,json; [print(f'{p[\"number\"]} {p[\"title\"]}') for p in json.load(sys.stdin)]"
+
+# Close ALL open PRs
+GITHUB_PAT=$(grep '^GITHUB_PAT=' /Users/ozgursedefoglu/Projects/ai-driven-development/.env | head -1 | cut -d= -f2) && for PR in $(curl -s -H "Authorization: Bearer $GITHUB_PAT" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/hubbridge-developer/xspec-specs/pulls?state=open&per_page=100" | python3 -c "import sys,json; [print(p['number']) for p in json.load(sys.stdin)]"); do curl -s -X PATCH -H "Authorization: Bearer $GITHUB_PAT" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/hubbridge-developer/xspec-specs/pulls/$PR" -d '{"state":"closed"}' | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'PR #{d[\"number\"]}: {d[\"state\"]}')"; done
+
+# =====================
+# GitHub — target code repo cleanup (hubbridge-developer/xspec-demo-app)
+# =====================
+
+# Delete ALL code/* branches (created by the Code Publisher)
+GITHUB_PAT=$(grep '^GITHUB_PAT=' /Users/ozgursedefoglu/Projects/ai-driven-development/.env | head -1 | cut -d= -f2) && for BRANCH in $(curl -s -H "Authorization: Bearer $GITHUB_PAT" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/hubbridge-developer/xspec-demo-app/branches?per_page=100" | python3 -c "import sys,json; [print(b['name']) for b in json.load(sys.stdin) if b['name'].startswith('code/')]"); do curl -s -o /dev/null -w "Deleted $BRANCH (%{http_code})\n" -X DELETE -H "Authorization: Bearer $GITHUB_PAT" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/hubbridge-developer/xspec-demo-app/git/refs/heads/$BRANCH"; done
+
+# List open PRs on the demo app
+GITHUB_PAT=$(grep '^GITHUB_PAT=' /Users/ozgursedefoglu/Projects/ai-driven-development/.env | head -1 | cut -d= -f2) && curl -s -H "Authorization: Bearer $GITHUB_PAT" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/hubbridge-developer/xspec-demo-app/pulls?state=open&per_page=100" | python3 -c "import sys,json; [print(f'{p[\"number\"]} {p[\"title\"]}') for p in json.load(sys.stdin)]"

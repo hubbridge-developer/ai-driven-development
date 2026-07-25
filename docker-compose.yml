@@ -1,0 +1,91 @@
+services:
+  aidd-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             python manage.py qdrant_create_collection &&
+             python manage.py seed_namespaces &&
+             python manage.py seed_spec_repo &&
+             python manage.py seed_repositories &&
+             daphne -b 0.0.0.0 -p 8001 aidd_project.asgi:application"
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: aidd
+      POSTGRES_PASSWORD: aidd
+      POSTGRES_DB: aidd
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aidd"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  aidd-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - aidd-api
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      # Only one model in memory at a time — mistral + codellama together
+      # exceed the Docker VM limit and get the loader OOM-killed.
+      - OLLAMA_MAX_LOADED_MODELS=1
+      - OLLAMA_KEEP_ALIVE=2m
+
+volumes:
+  pgdata:
+  qdrant_data:
+  ollama_data:

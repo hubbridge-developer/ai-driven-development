@@ -1,0 +1,47 @@
+# Django & DRF
+Django==5.1
+djangorestframework==3.15.2
+django-cors-headers==4.4.0
+
+# ASGI & WebSocket
+daphne==4.1.2
+channels==4.1.0
+channels-redis==4.2.0
+
+# Database
+psycopg2-binary==2.9.9
+
+# LangGraph
+langgraph==0.2.50
+langchain-core==0.3.25
+
+# LLM
+litellm==1.81.15
+
+# Vector DB
+qdrant-client==1.12.1
+
+# PyTorch CPU-only (no CUDA on ARM Mac)
+torch==2.5.1
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# Embeddings
+sentence-transformers==3.3.1
+
+# Static files
+whitenoise==6.7.0
+
+# GitHub API
+requests>=2.31.0
+
+# Code verification (generated-code lint + test execution)
+ruff==0.8.4
+pytest==8.3.4
+pytest-django==4.9.0
+
+# Utilities
+python-dotenv==1.0.1
+pyyaml==6.0.2
+structlog==24.4.0
+redis==5.2.1
+cryptography==43.0.3

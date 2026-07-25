@@ -1,0 +1,27 @@
+# Per-agent routing for Ollama. Uses a larger model for generation and lighter ones elsewhere.
+# Per-agent routing for Ollama.
+# mistral:7b for all LLM-dependent agents — good balance of reasoning + structured output.
+spec_generation:
+  model: ollama/mistral:7b
+  max_tokens: 4096
+  temperature: 0.2
+code_developer:
+  # 13b needs ~8-9GB; it fits only because OLLAMA_MAX_LOADED_MODELS=1
+  # (docker-compose.yml) swaps mistral out before loading it. If it still
+  # gets OOM-killed, drop to codellama:7b or run Ollama natively on the host.
+  # max_tokens 8192: full-file JSON responses were truncated at 4096.
+  model: ollama/codellama:13b
+  max_tokens: 8192
+  temperature: 0.2
+spec_discovery:
+  model: ollama/mistral:7b
+  max_tokens: 1024
+  temperature: 0.0
+spec_publisher:
+  model: ollama/mistral:7b
+  max_tokens: 512
+  temperature: 0.0
+spec_validator:
+  model: ollama/mistral:7b
+  max_tokens: 256
+  temperature: 0.0
