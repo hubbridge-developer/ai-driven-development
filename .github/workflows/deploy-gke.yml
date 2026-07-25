@@ -1,0 +1,122 @@
+name: Deploy to GKE
+
+# Builds the backend + frontend images, pushes them to Artifact Registry, and
+# deploys the k8s/ manifests to GKE. Auth is keyless via Workload Identity
+# Federation (no service-account JSON keys stored in GitHub).
+#
+# ── Required repository CONFIGURATION → Variables (Settings ▸ Secrets and
+#    variables ▸ Actions ▸ Variables) ────────────────────────────────────────
+#   GCP_PROJECT_ID   e.g. my-gcp-project
+#   GCP_REGION       e.g. us-central1              (Artifact Registry region)
+#   AR_REPO          e.g. add                      (Artifact Registry repo name)
+#   GKE_CLUSTER      e.g. add-cluster
+#   GKE_LOCATION     e.g. us-central1              (cluster region or zone)
+#
+# ── Required repository SECRETS ──────────────────────────────────────────────
+#   WIF_PROVIDER          projects/<n>/locations/global/workloadIdentityPools/<pool>/providers/<prov>
+#   WIF_SERVICE_ACCOUNT   deployer@<project>.iam.gserviceaccount.com
+#   DJANGO_SECRET_KEY
+#   DATABASE_URL          postgresql://add:<pw>@add-postgres:5432/add
+#   POSTGRES_PASSWORD     (must match the password inside DATABASE_URL)
+#   DJANGO_SUPERUSER_PASSWORD
+#   ANTHROPIC_API_KEY     (needed when LLM_PROVIDER=claude)
+#   APP_GITHUB_PAT        the app's GitHub PAT — cannot be named GITHUB_* (reserved)
+#   ENCRYPTION_KEY        (optional; leave the secret empty if unused)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'add_project/**'
+      - 'frontend/**'
+      - 'k8s/**'
+      - 'Dockerfile'
+      - 'requirements.txt'
+      - '.github/workflows/deploy-gke.yml'
+  workflow_dispatch:
+
+env:
+  REGION: ${{ vars.GCP_REGION }}
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  AR_REPO: ${{ vars.AR_REPO }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write        # required for Workload Identity Federation
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (keyless)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+
+      - name: Compute image refs
+        id: img
+        run: |
+          BASE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${AR_REPO}"
+          echo "backend=${BASE}/add-backend:${GITHUB_SHA}"   >> "$GITHUB_OUTPUT"
+          echo "frontend=${BASE}/add-frontend:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push backend image
+        run: |
+          docker build -t "${{ steps.img.outputs.backend }}" -f Dockerfile .
+          docker push "${{ steps.img.outputs.backend }}"
+
+      - name: Build & push frontend image
+        run: |
+          docker build -t "${{ steps.img.outputs.frontend }}" -f frontend/Dockerfile ./frontend
+          docker push "${{ steps.img.outputs.frontend }}"
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ vars.GKE_CLUSTER }}
+          location: ${{ vars.GKE_LOCATION }}
+
+      - name: Install kustomize
+        run: |
+          curl -sSfL "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Ensure namespace
+        run: kubectl apply -f k8s/namespace.yaml
+
+      - name: Create/refresh application Secret
+        run: |
+          kubectl create secret generic add-secrets -n add \
+            --from-literal=DJANGO_SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}" \
+            --from-literal=ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}" \
+            --from-literal=DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+            --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
+            --from-literal=DJANGO_SUPERUSER_PASSWORD="${{ secrets.DJANGO_SUPERUSER_PASSWORD }}" \
+            --from-literal=GITHUB_PAT="${{ secrets.APP_GITHUB_PAT }}" \
+            --from-literal=ANTHROPIC_API_KEY="${{ secrets.ANTHROPIC_API_KEY }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Set images and apply manifests
+        run: |
+          cd k8s
+          kustomize edit set image \
+            add-backend="${{ steps.img.outputs.backend }}" \
+            add-frontend="${{ steps.img.outputs.frontend }}"
+          kubectl apply -k .
+
+      - name: Wait for rollout
+        run: |
+          kubectl -n add rollout status statefulset/add-postgres --timeout=180s || true
+          kubectl -n add rollout status deploy/add-api --timeout=420s
+          kubectl -n add rollout status deploy/add-frontend --timeout=180s
+          echo "Ingress (external IP may take a few minutes):"
+          kubectl -n add get ingress add-ingress -o wide || true
