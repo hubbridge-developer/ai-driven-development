@@ -1,4 +1,4 @@
-# AIDD POC — Spec-Driven Development Platform
+# AI-Driven Development (AIDD) — Spec-Driven Delivery Platform
 
 > Full build/run instructions, common operations, and troubleshooting: **[HOW_TO_RUN.md](HOW_TO_RUN.md)**
 > A worked example of one request through all 10 stages, with the technology behind each: **[EXAMPLE_FLOW.md](EXAMPLE_FLOW.md)**

@@ -1,4 +1,4 @@
-# How to Build and Run AIDD POC
+# How to Build and Run AI-Driven Development (AIDD)
 
 Everything runs in Docker Compose — no local Python or Node installation needed.
 See `README.md` for what the platform does and how the pipeline works.

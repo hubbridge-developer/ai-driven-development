@@ -1,4 +1,4 @@
-# AIDD — What It Is, In Plain Words
+# AI-Driven Development (AIDD) — What It Is, In Plain Words
 
 ## The one-sentence version
 
