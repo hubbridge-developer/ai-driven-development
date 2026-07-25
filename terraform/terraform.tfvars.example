@@ -1,0 +1,10 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is gitignored.
+project_id   = "your-gcp-project-id"
+region       = "us-central1"
+github_owner = "hubbridge-developer"
+github_repo  = "ai-driven-development"
+
+# Optional overrides (defaults shown):
+# cluster_name   = "add-cluster"
+# ar_repo_name   = "add"
+# deployer_sa_id = "add-deployer"

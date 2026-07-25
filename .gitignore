@@ -4,6 +4,14 @@ gpt_readme.txt
 
 # Kubernetes — real secrets must never be committed
 k8s/secret.yaml
+
+# Terraform — local state and vars (keep .terraform.lock.hcl committed)
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/terraform.tfvars
+terraform/*.auto.tfvars
+crash.log
 # Python
 __pycache__/
 *.pyc
