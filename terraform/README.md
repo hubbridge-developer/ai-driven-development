@@ -1,97 +1,81 @@
 # Terraform — GCP foundation for ADD
 
-This provisions the GCP infrastructure the app is deployed onto. It is the layer
-*below* `k8s/`:
+Provisions the GCP infrastructure the app runs on. Designed so **every deploy
+runs in GitHub Actions** — the only manual step is a one-time bootstrap in the
+browser (Google Cloud Shell), never your laptop.
 
-| Layer | Provisions | Tool |
-|---|---|---|
-| **terraform/** (this) | GKE cluster, Artifact Registry, Workload Identity Federation, deployer SA + IAM, enabled APIs | Terraform |
-| **k8s/** | The app itself — pods, services, ingress — inside the cluster | kustomize / kubectl |
-| **.github/workflows/** | Builds images + applies `k8s/` on every push | GitHub Actions |
-
-State lives in a **GCS bucket** (shared by local + CI). Create it once, then init
-with the bucket/prefix:
-
-```bash
-export PROJECT_ID=your-project REGION=us-central1
-gsutil mb -l $REGION gs://$PROJECT_ID-tf-state
-gsutil versioning set on gs://$PROJECT_ID-tf-state
+```
+bootstrap.sh (Cloud Shell, once)  → trust + state bucket + CI service account
+        │  outputs GitHub config ↓
+terraform/  (GitHub Actions)      → GKE cluster + Artifact Registry
+k8s/        (GitHub Actions)      → the app on the cluster
 ```
 
-## One-time apply (local)
+Why a bootstrap at all? Keyless auth (Workload Identity Federation) needs an
+initial trust relationship, and Terraform can't create the very identity it
+authenticates through. So `bootstrap.sh` creates that once; Terraform manages
+everything else from CI.
+
+## Step 1 — Bootstrap (once, in Google Cloud Shell)
+
+Open **https://shell.cloud.google.com** (nothing to install), then:
 
 ```bash
-cd terraform
-cp terraform.tfvars.example terraform.tfvars   # fill in project_id (+ owner/repo)
-terraform init \
-  -backend-config="bucket=$PROJECT_ID-tf-state" \
-  -backend-config="prefix=add/gke"
-terraform plan
-terraform apply
+# clone your repo (or upload just terraform/bootstrap.sh)
+git clone https://github.com/hubbridge-developer/ai-driven-development
+cd ai-driven-development/terraform
+# edit the 3 vars at the top of bootstrap.sh (PROJECT_ID, REGION, REPO)
+bash bootstrap.sh
 ```
 
-You need `gcloud auth application-default login` first (or a `GOOGLE_APPLICATION_CREDENTIALS`),
-and your user must have Owner/Editor + IAM admin on the project to create the SA
-and Workload Identity resources.
+It creates the state bucket, the Workload Identity pool + GitHub provider, and a
+single **CI service account** (Owner, for the POC) that both workflows use. It
+prints the exact GitHub Variables/Secrets to set.
 
-## Deploy via GitHub Actions (`.github/workflows/terraform.yml`)
+## Step 2 — Configure GitHub (Settings ▸ Secrets and variables ▸ Actions)
 
-PRs touching `terraform/**` run `plan`; pushes to `main` (and manual dispatch)
-run `apply`. Auth is keyless via WIF, using a **privileged** Terraform service
-account — distinct from the app-deploy SA, which lacks permission to manage
-clusters/IAM.
+**Variables** (from the bootstrap output):
+`GCP_PROJECT_ID`, `GCP_REGION`, `AR_REPO`, `GKE_CLUSTER`, `GKE_LOCATION`, `TF_STATE_BUCKET`
 
-**Bootstrap once (project Owner, locally)** — after the local apply above created
-the `github-pool`:
+**Secrets — infra** (from the bootstrap output):
+`WIF_PROVIDER`, `WIF_SERVICE_ACCOUNT`
 
-```bash
-export REPO=hubbridge-developer/ai-driven-development
-gcloud iam service-accounts create add-terraform --display-name="ADD Terraform CI"
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:add-terraform@$PROJECT_ID.iam.gserviceaccount.com" \
-  --role="roles/owner"
-POOL=$(gcloud iam workload-identity-pools describe github-pool --location=global --format='value(name)')
-gcloud iam service-accounts add-iam-policy-binding \
-  add-terraform@$PROJECT_ID.iam.gserviceaccount.com \
-  --role=roles/iam.workloadIdentityUser \
-  --member="principalSet://iam.googleapis.com/$POOL/attribute.repository/$REPO"
-```
+**Secrets — app** (you choose these values):
+`DJANGO_SECRET_KEY`, `DATABASE_URL`, `POSTGRES_PASSWORD`, `DJANGO_SUPERUSER_PASSWORD`,
+`ANTHROPIC_API_KEY`, `ENCRYPTION_KEY`, `APP_GITHUB_PAT`
 
-**GitHub config** (Settings ▸ Secrets and variables ▸ Actions):
+> `DATABASE_URL` and `POSTGRES_PASSWORD` must agree, e.g.
+> `postgresql://add:<pw>@add-postgres:5432/add` with `POSTGRES_PASSWORD=<pw>`.
 
-- **Variables:** `TF_STATE_BUCKET` (= `$PROJECT_ID-tf-state`), plus the existing
-  `GCP_PROJECT_ID`, `GCP_REGION` (reused; `github_owner`/`github_repo` come from
-  the Actions context automatically).
-- **Secrets:** `TF_SERVICE_ACCOUNT` (= `add-terraform@$PROJECT_ID.iam.gserviceaccount.com`),
-  `TF_WIF_PROVIDER` (same value as the `WIF_PROVIDER` output).
+## Step 3 — Build the infra (GitHub Actions)
 
-## Wire the outputs into GitHub
+**Actions ▸ Terraform (GCP infra) ▸ Run workflow** (or push a change under
+`terraform/**`). It runs `plan` on PRs and `apply` on `main` — creating the GKE
+Autopilot cluster + Artifact Registry. State is stored in your GCS bucket, so
+runs are stateful and repeatable.
 
-```bash
-terraform output      # prints values named exactly like the GitHub config
-```
+## Step 4 — Deploy the app (GitHub Actions)
 
-Put these under **GitHub ▸ Settings ▸ Secrets and variables ▸ Actions**:
+Once the cluster exists, **Actions ▸ Deploy to GKE ▸ Run workflow** (or push app
+code). It builds both images → Artifact Registry, applies `k8s/`, and prints the
+Ingress IP. Open `http://<INGRESS_IP>/`.
 
-- **Variables:** `GCP_PROJECT_ID`, `GCP_REGION`, `AR_REPO`, `GKE_CLUSTER`, `GKE_LOCATION`
-- **Secrets:** `WIF_PROVIDER`, `WIF_SERVICE_ACCOUNT`
-- **App secrets you set yourself** (not from Terraform): `DJANGO_SECRET_KEY`,
-  `DATABASE_URL`, `POSTGRES_PASSWORD`, `DJANGO_SUPERUSER_PASSWORD`,
-  `ANTHROPIC_API_KEY`, `ENCRYPTION_KEY`, `APP_GITHUB_PAT`
-
-Then push to `main` (or run the workflow manually) and it deploys.
+> First-time ordering: run **Terraform** first (Step 3), then **Deploy** — the
+> deploy needs the cluster to already exist. Afterwards, normal pushes to `main`
+> just work.
 
 ## Notes
 
-- **Autopilot** cluster: no node pools to manage, always VPC-native so the
-  Ingress NEG annotations work. Switch to a Standard cluster + node pool in
-  `main.tf` if you want fixed nodes / lower idle cost.
-- **Keyless CI:** Workload Identity Federation means no service-account JSON key
-  is ever created or stored in GitHub. Only Actions runs from
-  `github_owner/github_repo` can impersonate the deployer SA.
-- **State:** stored locally by default. For a team, uncomment the `gcs` backend
-  in `versions.tf`.
-- **Cost:** an Autopilot cluster + LB + Artifact Registry bills while it exists.
-  `terraform destroy` tears it all down when you're done.
-- The in-cluster Postgres is fine for a POC; for production, provision Cloud SQL
-  here and point `DATABASE_URL` at it instead of the StatefulSet.
+- **No local tooling required** — bootstrap runs in Cloud Shell; all applies run
+  in Actions.
+- **Autopilot** cluster: no node pools, always VPC-native so the Ingress NEG
+  annotations work.
+- **Cost:** the cluster + LB + registry bill while they exist. To tear down, run
+  `terraform destroy` (locally or via a manual Actions job), then delete the
+  bootstrap resources if you're fully done.
+- **Least privilege:** the CI SA uses `roles/owner` for simplicity. For
+  production, replace it (in `bootstrap.sh`) with `roles/container.admin`,
+  `roles/artifactregistry.admin`, `roles/compute.networkAdmin`, and
+  `roles/serviceusage.serviceUsageAdmin`.
+- **Cloud SQL:** the in-cluster Postgres is POC-grade; for production add a
+  `google_sql_database_instance` here and point `DATABASE_URL` at it.

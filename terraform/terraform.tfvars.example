@@ -1,10 +1,8 @@
-# Copy to terraform.tfvars and fill in. terraform.tfvars is gitignored.
-project_id   = "your-gcp-project-id"
-region       = "us-central1"
-github_owner = "hubbridge-developer"
-github_repo  = "ai-driven-development"
+# In CI these come from the GCP_PROJECT_ID / GCP_REGION GitHub Variables
+# (passed as TF_VAR_project_id / TF_VAR_region), so a tfvars file is only needed
+# for optional local runs. cluster_name and ar_repo_name default to add-cluster / add.
+project_id = "your-gcp-project-id"
+region     = "us-central1"
 
-# Optional overrides (defaults shown):
-# cluster_name   = "add-cluster"
-# ar_repo_name   = "add"
-# deployer_sa_id = "add-deployer"
+# cluster_name = "add-cluster"
+# ar_repo_name = "add"
