@@ -97,8 +97,9 @@ Configure once in **Settings ▸ Secrets and variables ▸ Actions**:
 
 **Secrets:** `WIF_PROVIDER`, `WIF_SERVICE_ACCOUNT`, `DJANGO_SECRET_KEY`,
 `DATABASE_URL`, `POSTGRES_PASSWORD`, `DJANGO_SUPERUSER_PASSWORD`,
-`ANTHROPIC_API_KEY`, `ENCRYPTION_KEY`, and `APP_GITHUB_PAT` (the app's PAT —
-GitHub reserves the `GITHUB_` secret prefix, so it must use a different name).
+`ANTHROPIC_API_KEY`, `GEMINI_API_KEY` (for the `gemini` free-tier provider),
+`ENCRYPTION_KEY`, and `APP_GITHUB_PAT` (the app's PAT — GitHub reserves the
+`GITHUB_` secret prefix, so it must use a different name).
 
 One-time GCP setup the deployer service account needs: roles
 `roles/artifactregistry.writer` and `roles/container.developer`, plus a Workload

@@ -15,18 +15,24 @@ data:
   QDRANT_PORT: "6333"
   QDRANT_SPEC_COLLECTION: "spec_embeddings"
   # LLM: on GKE use a managed model service (no Ollama container by default).
-  #   "vertex" uses GKE Workload Identity (no key) — see the add-vertex SA.
-  #   "claude" would instead need ANTHROPIC_API_KEY in the Secret.
-  LLM_PROVIDER: "ollama"
+  # Pick a provider by setting LLM_PROVIDER + a matching LLM_ROUTING_CONFIG:
+  #   "gemini" — Google AI Studio FREE tier. Needs GEMINI_API_KEY in the Secret.
+  #              Free/rate-limited, NOT billed to this GCP project. Good for debug.
+  #   "vertex" — GCP-billed. Uses GKE Workload Identity (no key) via add-vertex SA.
+  #   "claude" — needs ANTHROPIC_API_KEY in the Secret.
+  # Currently active: gemini free tier (cheapest for debug runs).
+  LLM_PROVIDER: "gemini"
+  LLM_ROUTING_CONFIG: "config/llm_routing_gemini_free.yaml"
+  # --- Vertex settings (used only when LLM_PROVIDER=vertex) ---
   VERTEX_PROJECT: "ai-driven-development-503519"
   VERTEX_LOCATION: "us-central1"
   # Fallback model when no per-agent routing entry matches (see LLM_ROUTING_CONFIG).
   # To use CLAUDE via Vertex Model Garden: enable it, set VERTEX_LOCATION to a
   # region it offers (e.g. us-east5), and use vertex_ai/claude-3-5-sonnet-v2@20241022.
   VERTEX_MODEL: "vertex_ai/gemini-2.5-flash"
-  # Per-agent routing: fast Gemini for spec/NLP, stronger model for code.
-  # Remove this line to use the single VERTEX_MODEL for every agent.
-  LLM_ROUTING_CONFIG: "config/llm_routing_vertex.yaml"
+  # To switch back to Vertex (billed), set the two lines above to:
+  #   LLM_PROVIDER: "vertex"
+  #   LLM_ROUTING_CONFIG: "config/llm_routing_vertex.yaml"
   # GitHub target (configurable per deployment)
   GITHUB_OWNER: "hubbridge-developer"
   CODE_REPO: "xspec-demo-app"
