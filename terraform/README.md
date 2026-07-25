@@ -21,10 +21,16 @@ everything else from CI.
 Open **https://shell.cloud.google.com** (nothing to install), then:
 
 ```bash
-# clone your repo (or upload just terraform/bootstrap.sh)
 git clone https://github.com/hubbridge-developer/ai-driven-development
 cd ai-driven-development/terraform
-# edit the 3 vars at the top of bootstrap.sh (PROJECT_ID, REGION, REPO)
+
+# find your project id (create one + enable billing if you have none)
+gcloud projects list
+
+# run it with your real values (env vars) — no file editing needed
+PROJECT_ID=my-project \
+REGION=us-central1 \
+REPO=hubbridge-developer/ai-driven-development \
 bash bootstrap.sh
 ```
 

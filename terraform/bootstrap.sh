@@ -14,11 +14,19 @@
 # =============================================================================
 set -euo pipefail
 
-# ---- EDIT THESE THREE ----
-PROJECT_ID="your-gcp-project"
-REGION="us-central1"
-REPO="hubbridge-developer/ai-driven-development"   # owner/name
-# --------------------------
+# ---- SET THESE (edit here, or pass as env vars when running) ----
+#   PROJECT_ID=my-project REPO=owner/name bash bootstrap.sh
+PROJECT_ID="${PROJECT_ID:-your-gcp-project}"
+REGION="${REGION:-us-central1}"
+REPO="${REPO:-hubbridge-developer/ai-driven-development}"   # owner/name
+# -----------------------------------------------------------------
+
+if [ "$PROJECT_ID" = "your-gcp-project" ]; then
+  echo "ERROR: set your real GCP project id first, e.g.:" >&2
+  echo "  PROJECT_ID=my-project REPO=hubbridge-developer/ai-driven-development bash bootstrap.sh" >&2
+  echo "Find it with: gcloud projects list" >&2
+  exit 1
+fi
 
 SA="add-ci"
 POOL="github-pool"
