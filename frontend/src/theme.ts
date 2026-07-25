@@ -8,28 +8,30 @@ export const BRAND = {
   short: 'AIDD',
   tagline: 'Spec-driven delivery — AI-built, human-approved.',
   // Signature gradient used across the app shell, brand mark and CTAs.
-  gradient: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 45%, #d946ef 100%)',
-  gradientSoft: 'linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%)',
+  // Enterprise deep-pine → teal → emerald (distinctive, not blue, not purple).
+  gradient: 'linear-gradient(135deg, #0b3b3a 0%, #0d9488 52%, #10b981 100%)',
+  gradientSoft: 'linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 100%)',
 };
 
-const INDIGO = '#4f46e5';
-const VIOLET = '#7c3aed';
+const TEAL = '#0d9488'; // primary
+const PINE = '#0f5f5c'; // deep accent (dark)
+const EMERALD = '#10b981'; // secondary accent
 
 // ---------------------------------------------------------------------------
-// Theme — a clean, modern SaaS look with soft shadows and rounded surfaces.
+// Theme — a clean, modern enterprise look with soft shadows and rounded surfaces.
 // ---------------------------------------------------------------------------
 export const theme = createTheme({
   palette: {
     mode: 'light',
-    primary: { main: INDIGO, light: '#6366f1', dark: '#3730a3', contrastText: '#fff' },
-    secondary: { main: VIOLET, light: '#a78bfa', dark: '#5b21b6' },
-    success: { main: '#16a34a' },
-    warning: { main: '#d97706' },
-    error: { main: '#dc2626' },
-    info: { main: '#2563eb' },
-    background: { default: '#f6f7fb', paper: '#ffffff' },
-    text: { primary: '#0f172a', secondary: '#64748b' },
-    divider: alpha('#0f172a', 0.08),
+    primary: { main: TEAL, light: '#14b8a6', dark: PINE, contrastText: '#fff' },
+    secondary: { main: EMERALD, light: '#34d399', dark: '#047857' },
+    success: { main: '#15803d' },
+    warning: { main: '#b45309' },
+    error: { main: '#b91c1c' },
+    info: { main: '#0369a1' },
+    background: { default: '#f3f7f6', paper: '#ffffff' },
+    text: { primary: '#0f1f1d', secondary: '#5a6b68' },
+    divider: alpha('#0f1f1d', 0.08),
   },
   shape: { borderRadius: 12 },
   typography: {
@@ -45,13 +47,13 @@ export const theme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          backgroundColor: '#f6f7fb',
+          backgroundColor: '#f3f7f6',
           backgroundImage:
-            'radial-gradient(1200px 600px at 100% -10%, rgba(139,92,246,0.10), transparent 60%),' +
-            'radial-gradient(900px 500px at -10% 0%, rgba(99,102,241,0.10), transparent 55%)',
+            'radial-gradient(1200px 600px at 100% -10%, rgba(13,148,136,0.10), transparent 60%),' +
+            'radial-gradient(900px 500px at -10% 0%, rgba(16,185,129,0.10), transparent 55%)',
           backgroundAttachment: 'fixed',
         },
-        '::selection': { background: alpha(VIOLET, 0.18) },
+        '::selection': { background: alpha(TEAL, 0.18) },
       },
     },
     MuiPaper: {
@@ -66,7 +68,7 @@ export const theme = createTheme({
       defaultProps: { elevation: 0 },
       styleOverrides: {
         root: {
-          border: `1px solid ${alpha('#0f172a', 0.08)}`,
+          border: `1px solid ${alpha('#0f1f1d', 0.08)}`,
           borderRadius: 16,
           transition: 'box-shadow .2s ease, transform .2s ease, border-color .2s ease',
         },
@@ -78,8 +80,8 @@ export const theme = createTheme({
         root: { borderRadius: 10, paddingInline: 18, paddingBlock: 8 },
         containedPrimary: {
           background: BRAND.gradient,
-          boxShadow: '0 6px 16px rgba(124,58,237,0.28)',
-          '&:hover': { filter: 'brightness(1.05)', boxShadow: '0 8px 22px rgba(124,58,237,0.34)' },
+          boxShadow: '0 6px 16px rgba(13,148,136,0.28)',
+          '&:hover': { filter: 'brightness(1.05)', boxShadow: '0 8px 22px rgba(13,148,136,0.34)' },
         },
       },
     },
@@ -97,15 +99,15 @@ export const theme = createTheme({
         root: {
           background: 'rgba(255,255,255,0.72)',
           backdropFilter: 'saturate(180%) blur(12px)',
-          color: '#0f172a',
-          borderBottom: `1px solid ${alpha('#0f172a', 0.08)}`,
+          color: '#0f1f1d',
+          borderBottom: `1px solid ${alpha('#0f1f1d', 0.08)}`,
           boxShadow: 'none',
         },
       },
     },
     MuiTooltip: {
       styleOverrides: {
-        tooltip: { borderRadius: 8, fontSize: 12, background: '#0f172a' },
+        tooltip: { borderRadius: 8, fontSize: 12, background: '#0f1f1d' },
       },
     },
   },

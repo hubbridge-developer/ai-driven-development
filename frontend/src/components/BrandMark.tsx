@@ -2,50 +2,100 @@ import { Box, Typography } from '@mui/material';
 import { BRAND } from '../theme';
 
 /**
- * The AIDD brand lockup: a gradient monogram tile + optional wordmark.
- * Used in the nav bar and can be reused on empty states / headers.
+ * Enterprise brand lockup for the top-left of the app: a gradient badge holding
+ * a custom "software + AI" glyph (code brackets around an AI spark), plus the
+ * wordmark describing what the platform is.
  */
 export default function BrandMark({
   showName = true,
-  size = 34,
+  size = 40,
 }: {
   showName?: boolean;
   size?: number;
 }) {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+      {/* Badge */}
       <Box
         sx={{
+          position: 'relative',
           width: size,
           height: size,
-          borderRadius: 2,
+          borderRadius: 2.5,
           background: BRAND.gradient,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#fff',
-          fontWeight: 900,
-          fontSize: size * 0.4,
-          letterSpacing: '-0.04em',
-          boxShadow: '0 6px 16px rgba(124,58,237,0.35)',
+          boxShadow: '0 6px 16px rgba(13,148,136,0.35)',
           flexShrink: 0,
+          // subtle inner highlight for depth (enterprise, not flat)
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            borderRadius: 'inherit',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.28)',
+          },
         }}
       >
-        A
+        <svg
+          width="62%"
+          height="62%"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          {/* code brackets */}
+          <path
+            d="M8.5 6.5 L3.5 12 L8.5 17.5"
+            stroke="#fff"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M15.5 6.5 L20.5 12 L15.5 17.5"
+            stroke="#fff"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* AI spark at the center */}
+          <path
+            d="M12 9 L12.75 11.25 L15 12 L12.75 12.75 L12 15 L11.25 12.75 L9 12 L11.25 11.25 Z"
+            fill="#fff"
+          />
+        </svg>
       </Box>
+
       {showName && (
-        <Box sx={{ lineHeight: 1 }}>
+        <Box sx={{ lineHeight: 1.1 }}>
           <Typography
             component="span"
-            sx={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.02em', display: 'block' }}
+            sx={{
+              fontWeight: 800,
+              fontSize: 16,
+              letterSpacing: '-0.02em',
+              color: 'text.primary',
+              display: 'block',
+            }}
           >
-            {BRAND.short}
+            {BRAND.name}
           </Typography>
           <Typography
             component="span"
-            sx={{ fontSize: 11, color: 'text.secondary', display: 'block', mt: '1px' }}
+            sx={{
+              fontSize: 10.5,
+              fontWeight: 600,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'text.secondary',
+              display: 'block',
+              mt: '2px',
+            }}
           >
-            {BRAND.name}
+            Software Delivery Platform
           </Typography>
         </Box>
       )}

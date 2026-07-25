@@ -9,13 +9,6 @@ import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import { startWorkflow } from '../api/client';
 import { BRAND } from '../theme';
 
-const EXAMPLES = [
-  'I want a password reset feature with email verification',
-  'Add rate limiting to the payments API — 100 req/min per user',
-  'Fix the session expiry bug where users get logged out after 5 minutes',
-  'Add OAuth2 login support with Google and GitHub providers',
-];
-
 export default function WorkflowStartPage() {
   const [request, setRequest] = useState('');
   const [loading, setLoading] = useState(false);
@@ -105,29 +98,6 @@ export default function WorkflowStartPage() {
               </Stack>
             </Stack>
           </form>
-        </Paper>
-
-        <Paper sx={{ p: 3, mt: 3, background: BRAND.gradientSoft }} variant="outlined">
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-            Try an example
-          </Typography>
-          <Stack spacing={0.5}>
-            {EXAMPLES.map((example) => (
-              <Typography
-                key={example}
-                variant="body2"
-                sx={{
-                  cursor: 'pointer',
-                  py: 0.5,
-                  color: 'text.primary',
-                  '&:hover': { color: 'primary.main', textDecoration: 'underline' },
-                }}
-                onClick={() => setRequest(example)}
-              >
-                → {example}
-              </Typography>
-            ))}
-          </Stack>
         </Paper>
       </Container>
     </>
