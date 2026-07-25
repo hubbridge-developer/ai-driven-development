@@ -133,24 +133,6 @@ export default function WorkflowStartPage() {
           p: { xs: 2.5, md: 4 },
         }}
       >
-        {/* status bar */}
-        <Box
-          sx={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            fontFamily: PIXEL, fontSize: 9, color: AMBER_DIM, letterSpacing: '0.05em',
-            mb: { xs: 2.5, md: 3 },
-          }}
-        >
-          <span>ADD://NEW-TASK</span>
-          <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-            <Box component="span" sx={{
-              width: 8, height: 8, bgcolor: '#7CFC9A', borderRadius: '2px',
-              boxShadow: '0 0 8px #7CFC9A', animation: `${blink} 1.6s step-start infinite`,
-            }} />
-            READY WHEN YOU ARE
-          </Box>
-        </Box>
-
         {/* warm greeting */}
         <Box sx={{ fontFamily: TERM, fontSize: 22, color: AMBER_DIM, mb: 0.5 }}>
           {greeting()} — What are we building?
@@ -192,7 +174,7 @@ export default function WorkflowStartPage() {
               : 'inset 0 0 22px rgba(255,163,71,0.08)',
           }}
         >
-          <Box sx={{ fontFamily: TERM, fontSize: 26, color: CORAL, lineHeight: 1.1, userSelect: 'none' }}>&gt;</Box>
+          <Box sx={{ fontFamily: TERM, fontSize: 32, color: CORAL, lineHeight: 1.1, userSelect: 'none' }}>&gt;</Box>
           <Box
             component="textarea"
             value={request}
@@ -206,7 +188,7 @@ export default function WorkflowStartPage() {
             sx={{
               flex: 1, resize: 'vertical', border: 'none', outline: 'none',
               background: 'transparent', color: CREAM, fontFamily: TERM,
-              fontSize: 24, lineHeight: 1.3, caretColor: CORAL,
+              fontSize: 30, lineHeight: 1.3, caretColor: CORAL,
               '::placeholder': { color: 'rgba(216,168,116,0.55)' },
             }}
           />
@@ -238,23 +220,26 @@ export default function WorkflowStartPage() {
           >
             {loading ? 'ON IT…' : "LET’S BUILD ▶"}
           </Box>
-
-          {/* reassurance — reduces the fear of clicking */}
-          <Box sx={{ fontFamily: TERM, fontSize: 20, color: AMBER_DIM, lineHeight: 1.15 }}>
-            Nothing becomes real until you say so. There are no wrong answers here.
-          </Box>
         </Box>
 
-        {/* friendly, low-pressure trust chips */}
-        <Box sx={{ mt: 2.5, display: 'flex', gap: 1.25, flexWrap: 'wrap', fontFamily: PIXEL, fontSize: 8 }}>
-          {['YOU APPROVE EVERY STEP', 'TESTS INCLUDED', 'SAFE BY DESIGN'].map((t) => (
-            <Box key={t} sx={{
-              border: `1px solid rgba(216,168,116,0.5)`, color: AMBER_DIM,
-              px: 1, py: 0.75, borderRadius: 1, letterSpacing: '0.05em',
-            }}>
-              {t}
-            </Box>
-          ))}
+        {/* lean status footer */}
+        <Box
+          sx={{
+            mt: 3,
+            pt: 1.5,
+            borderTop: '1px solid rgba(216,168,116,0.22)',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            fontFamily: PIXEL, fontSize: 8, color: AMBER_DIM, letterSpacing: '0.05em',
+          }}
+        >
+          <span>ADD://NEW-TASK</span>
+          <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+            <Box component="span" sx={{
+              width: 6, height: 6, bgcolor: '#7CFC9A', borderRadius: '1px',
+              boxShadow: '0 0 6px #7CFC9A', animation: `${blink} 1.6s step-start infinite`,
+            }} />
+            READY WHEN YOU ARE
+          </Box>
         </Box>
       </Box>
     </Box>

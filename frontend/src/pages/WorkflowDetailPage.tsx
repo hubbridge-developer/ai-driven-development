@@ -368,12 +368,13 @@ export default function WorkflowDetailPage() {
             : 'primary'
           }
         />
-        <Typography variant="body2" fontFamily="monospace" color="text.secondary">
-          {workflow.workflow_id}
-        </Typography>
       </Box>
 
       <Paper sx={{ p: 2, mb: 3 }} variant="outlined">
+        <Typography variant="subtitle2" color="text.secondary">Workflow Id</Typography>
+        <Typography variant="body2" fontFamily="monospace" sx={{ mb: 1.5 }}>
+          {workflow.workflow_id}
+        </Typography>
         <Typography variant="subtitle2" color="text.secondary">User Request</Typography>
         <Typography variant="body1">{workflow.user_request}</Typography>
       </Paper>

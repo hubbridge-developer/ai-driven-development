@@ -12,6 +12,7 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import PublishIcon from '@mui/icons-material/Publish';
 import MergeIcon from '@mui/icons-material/MergeType';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
+import TimelineIcon from '@mui/icons-material/Timeline';
 import SearchIcon from '@mui/icons-material/Search';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
@@ -113,7 +114,7 @@ export default function ActivityLog({ entries, running }: Props) {
           zIndex: 1,
         }}
       >
-        <SmartToyIcon sx={{ fontSize: 20 }} />
+        <TimelineIcon sx={{ fontSize: 20 }} />
         <Typography variant="subtitle2" fontWeight={700} sx={{ flexGrow: 1 }}>
           Agent Activity
         </Typography>
