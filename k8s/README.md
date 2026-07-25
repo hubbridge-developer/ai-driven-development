@@ -3,6 +3,19 @@
 Raw Kubernetes manifests for running AI-Driven Development on Google Kubernetes
 Engine (GKE). Everything lives in the `add` namespace.
 
+## Live POC endpoints (ephemeral — LB IPs change on recreate)
+
+| What | URL |
+|---|---|
+| Frontend | http://8.232.238.64/ |
+| API docs (Swagger) | http://8.232.238.64/api/v1/docs |
+| Django admin | http://8.232.238.64/admin/ |
+| **Qdrant dashboard** | **http://136.65.214.203:6333/dashboard** |
+
+> The app URLs share the Ingress IP; Qdrant is a separate LoadBalancer
+> (`add-qdrant-lb`, POC-only, no auth). These IPs are not stable — re-check with
+> `kubectl -n add get ingress,svc` after a recreate.
+
 ```
 namespace.yaml     Namespace: add
 configmap.yaml     Non-secret config (LLM_PROVIDER, service DNS, GitHub owner…)
