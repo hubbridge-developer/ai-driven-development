@@ -16,6 +16,8 @@ services:
         condition: service_healthy
       qdrant:
         condition: service_started
+      ollama-init:
+        condition: service_completed_successfully
     command: >
       sh -c "python manage.py migrate &&
              python manage.py collectstatic --noinput &&
@@ -91,6 +93,23 @@ services:
       # exceed the Docker VM limit and get the loader OOM-killed.
       - OLLAMA_MAX_LOADED_MODELS=1
       - OLLAMA_KEEP_ALIVE=2m
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Downloads the local debug model automatically on first startup. The model
+  # is retained in ollama_data, so subsequent starts only verify it is present.
+  ollama-init:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    command: ["pull", "qwen2.5-coder:7b"]
+    restart: "no"
 
 volumes:
   pgdata:
