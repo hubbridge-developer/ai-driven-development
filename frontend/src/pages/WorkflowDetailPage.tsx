@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type ReactNode, type SyntheticEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Container, Typography, Grid, Paper, Box, Alert, CircularProgress, Chip, Button,
+  Accordion, AccordionSummary, AccordionDetails,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
   getWorkflow,
   getWorkflowSpec,
@@ -36,6 +38,44 @@ interface PersistedLogEntry {
   timestamp: string;
 }
 
+/** Collapsible section — click the header to expand/collapse its details. */
+function Section({ title, badge, expanded, onChange, children }: {
+  title: string;
+  badge?: ReactNode;
+  expanded: boolean;
+  onChange: (e: SyntheticEvent, v: boolean) => void;
+  children: ReactNode;
+}) {
+  return (
+    <Accordion
+      expanded={expanded}
+      onChange={onChange}
+      disableGutters
+      sx={{
+        mb: 2,
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 2,
+        boxShadow: 'none',
+        overflow: 'hidden',
+        '&:before': { display: 'none' },
+      }}
+    >
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon />}
+        sx={{
+          bgcolor: 'action.hover',
+          '& .MuiAccordionSummary-content': { alignItems: 'center', gap: 1, my: 1.25 },
+        }}
+      >
+        <Typography variant="h6">{title}</Typography>
+        {badge}
+      </AccordionSummary>
+      <AccordionDetails sx={{ pt: 2 }}>{children}</AccordionDetails>
+    </Accordion>
+  );
+}
+
 export default function WorkflowDetailPage() {
   const { workflowId } = useParams<{ workflowId: string }>();
   const [workflow, setWorkflow] = useState<Workflow | null>(null);
@@ -48,6 +88,14 @@ export default function WorkflowDetailPage() {
   const [activeDetail, setActiveDetail] = useState<string>('');
   const [activityLog, setActivityLog] = useState<LogEntry[]>([]);
   const logIdRef = useRef(0);
+
+  // Which collapsible sections are open. The section needing attention
+  // auto-expands (spec when awaiting spec approval, code when awaiting code).
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    activity: true, discovery: false, spec: true, code: false,
+  });
+  const toggleSection = (key: string) => (_e: SyntheticEvent, v: boolean) =>
+    setOpenSections((prev) => ({ ...prev, [key]: v }));
 
   const wsMessages = useWorkflowSocket(workflowId);
   const processedCountRef = useRef(0);
@@ -112,6 +160,18 @@ export default function WorkflowDetailPage() {
 
   // Initial fetch
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Auto-open the section that currently needs attention.
+  useEffect(() => {
+    const st = workflow?.status;
+    if (!st) return;
+    setOpenSections((prev) => ({
+      ...prev,
+      spec: st === 'waiting_approval' ? true : prev.spec,
+      code: st === 'waiting_code_approval' ? true : prev.code,
+      activity: st === 'running' ? true : prev.activity,
+    }));
+  }, [workflow?.status]);
 
   // Handle WebSocket messages: process ALL new messages in the queue (no drops)
   useEffect(() => {
@@ -351,8 +411,8 @@ export default function WorkflowDetailPage() {
 
           {/* Discovery Results */}
           {hasDiscoveryData && (
-            <Paper sx={{ p: 2, mt: 2 }} variant="outlined">
-              <Typography variant="h6" gutterBottom>Discovery Results</Typography>
+            <Box sx={{ mt: 2 }}>
+              <Section title="Discovery Results" expanded={openSections.discovery} onChange={toggleSection('discovery')}>
 
               {specData.request_classification && (
                 <Box mb={1}>
@@ -405,7 +465,8 @@ export default function WorkflowDetailPage() {
                   <Typography variant="body2" color="text.secondary">No related specs found.</Typography>
                 </Box>
               ) : null}
-            </Paper>
+              </Section>
+            </Box>
           )}
         </Grid>
 
@@ -422,8 +483,12 @@ export default function WorkflowDetailPage() {
           )}
 
           {hasGeneratedSpec ? (
-            <>
-              <Typography variant="h6" gutterBottom>Generated Specification</Typography>
+            <Section
+              title="Generated Specification"
+              badge={specData.spec_id ? <Chip label={specData.spec_id} size="small" color="primary" /> : undefined}
+              expanded={openSections.spec}
+              onChange={toggleSection('spec')}
+            >
               <SpecViewer
                 specContent={specData.generated_spec || ''}
                 specId={specData.spec_id || ''}
@@ -475,7 +540,7 @@ export default function WorkflowDetailPage() {
                   Workflow cancelled. The specification was not published.
                 </Alert>
               )}
-            </>
+            </Section>
           ) : (
             !showActivityLog && (
               <Paper sx={{ p: 4 }}>
@@ -488,8 +553,7 @@ export default function WorkflowDetailPage() {
 
           {/* Code section */}
           {hasCodeData && (
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="h6" gutterBottom>Generated Code</Typography>
+            <Section title="Generated Code" expanded={openSections.code} onChange={toggleSection('code')}>
               {code?.implementation_summary && (
                 <Paper sx={{ p: 2, mb: 2 }} variant="outlined">
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
@@ -557,7 +621,7 @@ export default function WorkflowDetailPage() {
                   loading={actionLoading}
                 />
               )}
-            </Box>
+            </Section>
           )}
         </Grid>
       </Grid>

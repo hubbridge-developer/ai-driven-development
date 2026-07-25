@@ -8,11 +8,11 @@ export default defineConfig({
     host: '0.0.0.0',
     proxy: {
       '/api': {
-        target: 'http://aidd-api:8001',
+        target: 'http://add-api:8001',
         changeOrigin: true,
       },
       '/ws': {
-        target: 'ws://aidd-api:8001',
+        target: 'ws://add-api:8001',
         ws: true,
       },
     },

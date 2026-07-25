@@ -82,7 +82,7 @@ export default function WorkflowListPage() {
               <TableRow>
                 <TableCell colSpan={5} align="center">
                   <Typography color="text.secondary" py={3}>
-                    No workflows yet. Start one from the New Specification page.
+                    No workflows yet. Start one from the New Task page.
                   </Typography>
                 </TableCell>
               </TableRow>

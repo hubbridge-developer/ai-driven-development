@@ -5,7 +5,7 @@ import { createTheme, alpha } from '@mui/material/styles';
 // ---------------------------------------------------------------------------
 export const BRAND = {
   name: 'AI-Driven Development',
-  short: 'AIDD',
+  short: 'ADD',
   tagline: 'Spec-driven delivery — AI-built, human-approved.',
   // Signature gradient used across the app shell, brand mark and CTAs.
   // Enterprise deep-pine → teal → emerald (distinctive, not blue, not purple).

@@ -32,7 +32,7 @@ function NavBar() {
             startIcon={<AddIcon />}
             sx={navBtn(location.pathname === '/')}
           >
-            New Spec
+            New Task
           </Button>
           <Button
             component={Link}
