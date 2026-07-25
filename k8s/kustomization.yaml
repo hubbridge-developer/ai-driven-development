@@ -6,6 +6,7 @@ namespace: add
 resources:
   - namespace.yaml
   - configmap.yaml
+  - serviceaccount.yaml
   # secret.yaml is intentionally NOT listed — create it from secret.example.yaml
   # and apply separately so real credentials never live in version control:
   #   kubectl apply -f secret.yaml

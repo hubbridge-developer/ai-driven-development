@@ -15,11 +15,16 @@ data:
   QDRANT_PORT: "6333"
   QDRANT_SPEC_COLLECTION: "spec_embeddings"
   # LLM: on GKE use a managed model service (no Ollama container by default).
-  #   "claude" needs ANTHROPIC_API_KEY (in the Secret)
-  #   "vertex" uses Workload Identity + VERTEX_PROJECT below
-  LLM_PROVIDER: "claude"
-  VERTEX_PROJECT: ""
+  #   "vertex" uses GKE Workload Identity (no key) — see the add-vertex SA.
+  #   "claude" would instead need ANTHROPIC_API_KEY in the Secret.
+  LLM_PROVIDER: "vertex"
+  VERTEX_PROJECT: "ai-driven-development-503519"
   VERTEX_LOCATION: "us-central1"
+  # Model. Default is Gemini. To use CLAUDE via Vertex Model Garden instead:
+  #   1) enable the model in Model Garden, 2) set VERTEX_LOCATION to a region it
+  #   offers (e.g. us-east5 — not us-central1), 3) set:
+  #   VERTEX_MODEL: "vertex_ai/claude-3-5-sonnet-v2@20241022"
+  VERTEX_MODEL: "vertex_ai/gemini-2.0-flash-001"
   # GitHub target (configurable per deployment)
   GITHUB_OWNER: "hubbridge-developer"
   CODE_REPO: "xspec-demo-app"

@@ -2,6 +2,7 @@
 Django==5.1
 djangorestframework==3.15.2
 drf-spectacular==0.28.0
+google-cloud-aiplatform==1.71.1   # Vertex AI (Gemini or Claude-on-Vertex) via LiteLLM
 django-cors-headers==4.4.0
 
 # ASGI & WebSocket

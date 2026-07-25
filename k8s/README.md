@@ -104,13 +104,24 @@ One-time GCP setup the deployer service account needs: roles
 `roles/artifactregistry.writer` and `roles/container.developer`, plus a Workload
 Identity Pool/provider bound to this repo.
 
-## Using Vertex AI (GCP-native, the "Bedrock equivalent")
+## Vertex AI (GCP-native, the "Bedrock equivalent") — wired by default
 
-1. In `configmap.yaml` set `LLM_PROVIDER: "vertex"` and `VERTEX_PROJECT: your-project`.
-2. Enable **Workload Identity** on the cluster and bind the `add` KSA to a GSA
-   with the *Vertex AI User* role — then no key file is needed in the pod.
-3. Per-agent model overrides still work via the routing YAML
-   (`vertex_ai/gemini-1.5-pro`, etc.).
+The GKE config uses Vertex AI with **no API key** — the backend pod authenticates
+via GKE Workload Identity:
+
+- `configmap.yaml`: `LLM_PROVIDER=vertex`, `VERTEX_PROJECT`, `VERTEX_LOCATION`, `VERTEX_MODEL`.
+- `serviceaccount.yaml`: KSA `add-vertex`, annotated to impersonate the GCP SA.
+- Terraform (`main.tf`): GCP SA `add-vertex` with `roles/aiplatform.user`, the
+  `workloadIdentityUser` binding for `add/add-vertex`, and the `aiplatform` API.
+- Autopilot has Workload Identity on by default — nothing else to enable.
+
+**Default model is Gemini** (`vertex_ai/gemini-2.0-flash-001`). To use **Claude
+via Vertex Model Garden** instead: enable the model in Model Garden, set
+`VERTEX_LOCATION` to a region that offers it (e.g. `us-east5`, not `us-central1`),
+and set `VERTEX_MODEL: "vertex_ai/claude-3-5-sonnet-v2@20241022"`. Same SA, no key.
+
+Order: run **Terraform** (creates the SA + IAM) before the **Deploy** that mounts
+the KSA.
 
 ## Production hardening (follow-ups, not required for a POC)
 

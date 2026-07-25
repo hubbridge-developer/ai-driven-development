@@ -25,9 +25,9 @@ import structlog
 
 logger = structlog.get_logger()
 
-# Sensible default Vertex model when the provider is selected but no per-agent
-# override is set. Gemini 1.5 Pro is the closest analogue to a strong coding model.
-DEFAULT_VERTEX_MODEL = "vertex_ai/gemini-1.5-pro"
+# Default Vertex model when the provider is selected but no per-agent override
+# is set. Override without code changes via the VERTEX_MODEL env var (ConfigMap).
+DEFAULT_VERTEX_MODEL = os.getenv("VERTEX_MODEL", "vertex_ai/gemini-2.0-flash-001")
 
 
 def configure_vertex() -> bool:

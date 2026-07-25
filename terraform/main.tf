@@ -11,9 +11,32 @@ resource "google_project_service" "apis" {
     "container.googleapis.com",        # GKE
     "artifactregistry.googleapis.com", # image registry
     "compute.googleapis.com",          # LB / networking for the Ingress
+    "aiplatform.googleapis.com",       # Vertex AI (Gemini / Claude-on-Vertex)
   ])
   service            = each.key
   disable_on_destroy = false
+}
+
+# ---------------------------------------------------------------------------
+# Vertex AI access for the backend pod via GKE Workload Identity.
+# The GCP SA below is impersonated by the in-cluster ServiceAccount
+# add/add-vertex (see k8s/serviceaccount.yaml) — no key file in the pod.
+# ---------------------------------------------------------------------------
+resource "google_service_account" "vertex" {
+  account_id   = "add-vertex"
+  display_name = "ADD backend — Vertex AI access"
+}
+
+resource "google_project_iam_member" "vertex_user" {
+  project = var.project_id
+  role    = "roles/aiplatform.user"
+  member  = "serviceAccount:${google_service_account.vertex.email}"
+}
+
+resource "google_service_account_iam_member" "vertex_workload_identity" {
+  service_account_id = google_service_account.vertex.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[add/add-vertex]"
 }
 
 # ---------------------------------------------------------------------------

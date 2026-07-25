@@ -41,6 +41,7 @@ spec:
     metadata:
       labels: { app: add-api }
     spec:
+      serviceAccountName: add-vertex   # GKE Workload Identity → Vertex AI creds
       # initContainer runs DB migrations + one-time seeds before Daphne starts.
       initContainers:
         - name: migrate-and-seed
