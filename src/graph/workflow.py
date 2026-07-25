@@ -58,7 +58,16 @@ def _persist_and_notify(agent_fn):
     Saves the NEXT stage as current_agent so the frontend stepper advances immediately.
     """
     def wrapper(state: WorkflowState) -> dict:
+        import time
+        from src.llm.provider import reset_usage, get_usage
+        from django.utils import timezone
+
+        # Time this stage and isolate its LLM usage.
+        reset_usage()
+        t0 = time.monotonic()
         result = agent_fn(state)
+        elapsed = round(time.monotonic() - t0, 2)
+        usage = get_usage()
 
         workflow_id = state.get("workflow_id", "")
         completed_agent = result.get("current_agent", "")
@@ -71,20 +80,53 @@ def _persist_and_notify(agent_fn):
                 # Merge result into state_snapshot
                 snapshot = wf.state_snapshot or {}
                 snapshot.update(result)
+
+                # Per-stage metric entry in the activity log (time + LLM cost)
+                cost = round(usage["cost_usd"], 6)
+                metric_detail = (
+                    f"Completed in {elapsed}s"
+                    + (f" · {usage['total_tokens']} tokens · ${cost:.4f}"
+                       if usage["calls"] else "")
+                )
+                log = snapshot.get("activity_log", [])
+                log.append({
+                    "agent": completed_agent, "sub_step": "Stage complete",
+                    "detail": metric_detail, "model": "",
+                    "timestamp": timezone.now().isoformat(),
+                    "duration_sec": elapsed, "cost_usd": cost,
+                    "tokens": usage["total_tokens"],
+                })
+                snapshot["activity_log"] = log
+
+                # Roll into workflow-level totals (token_usage JSON field)
+                tu = wf.token_usage or {}
+                tu["total_duration_sec"] = round(tu.get("total_duration_sec", 0) + elapsed, 2)
+                tu["total_cost_usd"] = round(tu.get("total_cost_usd", 0) + cost, 6)
+                tu["total_tokens"] = tu.get("total_tokens", 0) + usage["total_tokens"]
+                tu["total_llm_calls"] = tu.get("total_llm_calls", 0) + usage["calls"]
+                stages = tu.get("stages", [])
+                stages.append({
+                    "agent": completed_agent, "duration_sec": elapsed,
+                    "cost_usd": cost, "tokens": usage["total_tokens"], "calls": usage["calls"],
+                })
+                tu["stages"] = stages
+                wf.token_usage = tu
+
                 wf.current_agent = next_agent
                 wf.state_snapshot = snapshot
-                wf.save(update_fields=["current_agent", "state_snapshot", "updated_at"])
+                wf.save(update_fields=["current_agent", "state_snapshot", "token_usage", "updated_at"])
                 logger.info(
                     "agent_state_persisted",
-                    workflow_id=workflow_id,
-                    completed=completed_agent,
-                    next=next_agent,
+                    workflow_id=workflow_id, completed=completed_agent, next=next_agent,
+                    duration_sec=elapsed, cost_usd=cost, tokens=usage["total_tokens"],
                 )
 
-                # Send WebSocket notification with the next stage
+                # Live: log the stage-complete metric, then advance the stepper
+                _send_ws_update(workflow_id, completed_agent,
+                                result.get("spec_id", "") or state.get("spec_id", ""),
+                                sub_step="Stage complete", detail=metric_detail)
                 _send_ws_update(
-                    workflow_id,
-                    next_agent,
+                    workflow_id, next_agent,
                     result.get("spec_id", "") or state.get("spec_id", ""),
                 )
             except Exception as e:

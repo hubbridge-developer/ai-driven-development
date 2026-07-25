@@ -3,6 +3,7 @@
 import os
 import json
 import hashlib
+import threading
 import structlog
 import yaml
 from dataclasses import dataclass
@@ -47,6 +48,30 @@ class LLMResponse:
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
+    cost_usd: float = 0.0
+
+
+# ---------------------------------------------------------------------------
+# Per-stage usage accumulator. The pipeline runs one stage at a time in a single
+# background thread, so a thread-local running total is exactly "this stage's
+# LLM usage" once reset at the start of the stage (see graph/workflow.py).
+# ---------------------------------------------------------------------------
+_usage = threading.local()
+
+
+def _acc() -> dict:
+    if not hasattr(_usage, "data"):
+        reset_usage()
+    return _usage.data
+
+
+def reset_usage() -> None:
+    _usage.data = {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0,
+                   "total_tokens": 0, "cost_usd": 0.0}
+
+
+def get_usage() -> dict:
+    return dict(_acc())
 
 
 def get_model_for_agent(agent_name: str) -> str:
@@ -101,19 +126,37 @@ def call_llm(
         )
 
         usage = response.usage
+
+        # Cost (USD) — LiteLLM knows pricing for Vertex/Gemini, Claude, etc.
+        # Local models (Ollama) are free, so this is ~0.0 there.
+        try:
+            cost = float(litellm.completion_cost(completion_response=response) or 0.0)
+        except Exception:
+            cost = 0.0
+
         result = LLMResponse(
             content=response.choices[0].message.content,
             model=model,
             prompt_tokens=usage.prompt_tokens or 0,
             completion_tokens=usage.completion_tokens or 0,
             total_tokens=usage.total_tokens or 0,
+            cost_usd=cost,
         )
+
+        # accumulate into the current stage's running total
+        d = _acc()
+        d["calls"] += 1
+        d["prompt_tokens"] += result.prompt_tokens
+        d["completion_tokens"] += result.completion_tokens
+        d["total_tokens"] += result.total_tokens
+        d["cost_usd"] += cost
 
         logger.info(
             "llm_call_complete",
             agent=agent_name,
             model=model,
             tokens=result.total_tokens,
+            cost_usd=round(cost, 6),
         )
         return result
 

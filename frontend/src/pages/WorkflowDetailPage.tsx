@@ -6,6 +6,8 @@ import {
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import PaidIcon from '@mui/icons-material/Paid';
 import {
   getWorkflow,
   getWorkflowSpec,
@@ -368,6 +370,21 @@ export default function WorkflowDetailPage() {
             : 'primary'
           }
         />
+        {(() => {
+          const tu = (workflow.token_usage || {}) as Record<string, number>;
+          return (
+            <>
+              {typeof tu.total_duration_sec === 'number' && (
+                <Chip size="small" variant="outlined" icon={<AccessTimeIcon />}
+                  label={`${tu.total_duration_sec.toFixed(1)}s total`} />
+              )}
+              {typeof tu.total_cost_usd === 'number' && (
+                <Chip size="small" variant="outlined" color="secondary" icon={<PaidIcon />}
+                  label={`$${tu.total_cost_usd.toFixed(4)} LLM`} />
+              )}
+            </>
+          );
+        })()}
       </Box>
 
       <Paper sx={{ p: 2, mb: 3 }} variant="outlined">
