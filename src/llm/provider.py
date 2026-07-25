@@ -30,6 +30,8 @@ PROVIDER_DEFAULTS = {
     "litellm": "claude-sonnet-4-6",
     "claude": "claude-sonnet-4-6",
     "vertex": DEFAULT_VERTEX_MODEL,
+    # Google AI Studio free tier (LiteLLM reads GEMINI_API_KEY from env).
+    "gemini": "gemini/gemini-2.5-flash",
 }
 
 # Per-agent model routing (can be overridden via config)
