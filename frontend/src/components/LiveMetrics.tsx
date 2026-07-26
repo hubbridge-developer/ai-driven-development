@@ -9,8 +9,9 @@ interface Props {
   committedDur: number;
   /** Sum of completed-stage LLM cost (USD), from token_usage. */
   committedCost: number;
-  /** Epoch ms when the current stage started (resets each stage). */
-  stageStartMs: number;
+  /** ISO timestamp when the current stage started (persisted by the backend, so
+   *  the live timer is identical on every reopen — never resets). */
+  stageStartedAt?: string | null;
   /** In-progress LLM cost of the current stage (USD), pushed via WS. */
   liveStageCost: number;
 }
@@ -31,7 +32,7 @@ function formatDuration(totalSeconds: number): string {
  * panels) no longer re-renders every second, which was causing the flicker.
  */
 export default function LiveMetrics({
-  status, committedDur, committedCost, stageStartMs, liveStageCost,
+  status, committedDur, committedCost, stageStartedAt, liveStageCost,
 }: Props) {
   const running = status === 'running';
 
@@ -43,8 +44,12 @@ export default function LiveMetrics({
     return () => clearInterval(id);
   }, [running]);
 
-  const liveDur = running
-    ? committedDur + (Date.now() - stageStartMs) / 1000
+  // Live total = committed (completed) stages + the current stage's real elapsed,
+  // measured from the backend-persisted start timestamp. When not running (done,
+  // paused for approval, reopened), it's exactly the committed total — immutable.
+  const startedMs = stageStartedAt ? Date.parse(stageStartedAt) : NaN;
+  const liveDur = running && !Number.isNaN(startedMs)
+    ? committedDur + Math.max(0, (Date.now() - startedMs) / 1000)
     : committedDur;
   const liveCost = running ? committedCost + liveStageCost : committedCost;
   const show = running || committedDur > 0 || committedCost > 0;

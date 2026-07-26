@@ -61,6 +61,24 @@ def _persist_and_notify(agent_fn):
         import time
         from src.llm.provider import reset_usage, get_usage
         from django.utils import timezone
+        from src.add_api.models import WorkflowRun
+
+        workflow_id = state.get("workflow_id", "")
+
+        # Persist WHEN this stage started. The frontend's live total-time counter
+        # is derived from this timestamp (committed stages + now - this_start), so
+        # it is identical on every page reopen instead of restarting from when the
+        # browser tab happened to open. Excludes human approval-wait time because a
+        # fresh timestamp is written at the start of each stage (incl. post-resume).
+        if workflow_id:
+            try:
+                wf = WorkflowRun.objects.get(workflow_id=workflow_id)
+                tu = wf.token_usage or {}
+                tu["current_stage_started_at"] = timezone.now().isoformat()
+                wf.token_usage = tu
+                wf.save(update_fields=["token_usage", "updated_at"])
+            except Exception as e:
+                logger.warning("stage_start_persist_failed", workflow_id=workflow_id, error=str(e))
 
         # Time this stage and isolate its LLM usage.
         reset_usage()
@@ -69,7 +87,6 @@ def _persist_and_notify(agent_fn):
         elapsed = round(time.monotonic() - t0, 2)
         usage = get_usage()
 
-        workflow_id = state.get("workflow_id", "")
         completed_agent = result.get("current_agent", "")
         next_agent = _next_stage(completed_agent)
 

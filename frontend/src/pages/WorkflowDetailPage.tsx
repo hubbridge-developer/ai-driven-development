@@ -92,9 +92,9 @@ export default function WorkflowDetailPage() {
 
   // Live metrics: <LiveMetrics> owns the 1s ticker so only the chips re-render
   // each second (the page — with its heavy spec/code panels — does not). The
-  // current stage's in-progress LLM cost comes from WS so totals rise between
-  // stage completions instead of jumping only at the end of each stage.
-  const stageStartRef = useRef<number>(Date.now());
+  // live total time is derived from the backend-persisted stage start timestamp
+  // (token_usage.current_stage_started_at), so it never resets on reopen. The
+  // current stage's in-progress LLM cost comes from WS.
   const [liveStageCost, setLiveStageCost] = useState(0);
 
   // Which collapsible sections are open. The section needing attention
@@ -169,9 +169,8 @@ export default function WorkflowDetailPage() {
   // Initial fetch
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Reset per-stage live counters whenever the active stage changes.
+  // Reset the current stage's in-progress cost whenever the active stage changes.
   useEffect(() => {
-    stageStartRef.current = Date.now();
     setLiveStageCost(0);
   }, [workflow?.current_agent]);
 
@@ -402,13 +401,13 @@ export default function WorkflowDetailPage() {
           }
         />
         {(() => {
-          const tu = (workflow.token_usage || {}) as Record<string, number>;
+          const tu = (workflow.token_usage || {}) as Record<string, unknown>;
           return (
             <LiveMetrics
               status={workflow.status}
-              committedDur={tu.total_duration_sec || 0}
-              committedCost={tu.total_cost_usd || 0}
-              stageStartMs={stageStartRef.current}
+              committedDur={Number(tu.total_duration_sec) || 0}
+              committedCost={Number(tu.total_cost_usd) || 0}
+              stageStartedAt={(tu.current_stage_started_at as string) || null}
               liveStageCost={liveStageCost}
             />
           );
