@@ -12,9 +12,11 @@ from django.conf import settings
 import litellm
 from litellm import completion
 
-# Configure Ollama API base if running in Docker
-if os.getenv("OLLAMA_HOST"):
-    litellm.api_base = os.getenv("OLLAMA_HOST")
+# Ollama's API base. IMPORTANT: pass this per-call for ollama/* models only —
+# setting litellm.api_base globally hijacks every other provider that honors it
+# (e.g. OpenRouter would get redirected to the Ollama container and 404). See
+# call_llm below, where it's applied only when the model is an ollama model.
+OLLAMA_API_BASE = os.getenv("OLLAMA_HOST")
 
 # Configure Google Vertex AI if selected (GCP-native model service). Safe no-op
 # when not configured — see src/llm/vertex_provider.py.
@@ -123,12 +125,19 @@ def call_llm(
         prompt_length=len(prompt),
     )
 
+    # Apply the Ollama base URL ONLY for ollama/* models. Other providers
+    # (groq, openrouter, vertex, ...) must use their own default endpoints.
+    extra: dict = {}
+    if model.startswith("ollama/") and OLLAMA_API_BASE:
+        extra["api_base"] = OLLAMA_API_BASE
+
     try:
         response = completion(
             model=model,
             messages=messages,
             max_tokens=effective_max_tokens,
             temperature=effective_temperature,
+            **extra,
         )
 
         usage = response.usage
