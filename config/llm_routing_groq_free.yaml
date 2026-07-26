@@ -36,12 +36,13 @@ namespace_resolver:
   max_tokens: 2048
   temperature: 0.1
 
-# --- Code: strongest coder in the Groq catalog ---
-# gpt-oss-120b is a 120B open-weight reasoning model — far better than llama-70b
-# at the structured, file-preserving code generation this stage needs (llama-70b
-# was returning 0 files / rewriting whole files). Verified available via
-# GET https://api.groq.com/openai/v1/models.
+# --- Code: strongest model that FITS the free-tier per-minute token cap ---
+# NOTE: gpt-oss-120b is a better coder but its free-tier TPM is only 8000 — this
+# stage sends spec + affected files (~9k tokens), so a single request exceeds the
+# cap and 429s ("Request too large"). llama-3.3-70b-versatile has ~12k TPM, so it
+# fits and actually completes. To use gpt-oss-120b you must raise the TPM cap:
+# upgrade to Groq Dev Tier (paid) at https://console.groq.com/settings/billing.
 code_developer:
-  model: groq/openai/gpt-oss-120b
+  model: groq/llama-3.3-70b-versatile
   max_tokens: 8192
   temperature: 0.2
