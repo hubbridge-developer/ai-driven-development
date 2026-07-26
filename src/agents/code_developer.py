@@ -234,12 +234,14 @@ def code_developer_agent(state: WorkflowState) -> dict:
     notify_sub_step(workflow_id, "code_developer", "Lint & Format", spec_id=spec_id,
                     detail=f"Lint complete — {len(final_files)} file(s) cleaned and formatted")
 
-    # Separate back into code files and test files
-    test_paths = {t["path"] for t in generated_tests}
+    # Separate back into code files and test files. Tests from the parser's
+    # salvage path may omit keys, so read defensively (missing keys must not
+    # crash the whole stage — that leaves the workflow stuck before the gate).
+    test_paths = {t.get("path") for t in generated_tests if t.get("path")}
     final_code_files = [f for f in final_files if f["path"] not in test_paths]
     final_test_files = [
         {"path": f["path"], "content": f["content"],
-         "test_type": next((t["test_type"] for t in generated_tests if t["path"] == f["path"]), "unit")}
+         "test_type": next((t.get("test_type", "unit") for t in generated_tests if t.get("path") == f["path"]), "unit")}
         for f in final_files if f["path"] in test_paths
     ]
 
@@ -315,7 +317,7 @@ def code_developer_agent(state: WorkflowState) -> dict:
             final_code_files = [f for f in final_files if f["path"] not in test_paths]
             final_test_files = [
                 {"path": f["path"], "content": f["content"],
-                 "test_type": next((t["test_type"] for t in generated_tests if t["path"] == f["path"]), "unit")}
+                 "test_type": next((t.get("test_type", "unit") for t in generated_tests if t.get("path") == f["path"]), "unit")}
                 for f in final_files if f["path"] in test_paths
             ]
 
