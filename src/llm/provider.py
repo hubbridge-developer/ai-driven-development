@@ -34,6 +34,8 @@ PROVIDER_DEFAULTS = {
     "gemini": "gemini/gemini-2.5-flash",
     # Groq free tier (LiteLLM reads GROQ_API_KEY from env).
     "groq": "groq/llama-3.3-70b-versatile",
+    # OpenRouter free tier (LiteLLM reads OPENROUTER_API_KEY from env).
+    "openrouter": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
 }
 
 # Per-agent model routing (can be overridden via config)

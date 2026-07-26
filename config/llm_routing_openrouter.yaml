@@ -1,0 +1,50 @@
+# Hybrid routing: OpenRouter's strongest FREE coder for the code stage, Groq's
+# free models for the lighter spec/NLP stages.
+#
+# WHY hybrid: Groq meters by tokens/minute — great for small calls, but its cap
+# rejects the code stage's ~9k-token request. OpenRouter free models meter by
+# requests/day instead, so a big single code call goes through. Best of both.
+#
+# Select it with:
+#   LLM_PROVIDER=openrouter
+#   LLM_ROUTING_CONFIG=config/llm_routing_openrouter.yaml
+#   OPENROUTER_API_KEY=sk-or-...   (free key from https://openrouter.ai/keys)
+#   GROQ_API_KEY=gsk_...           (still used by the light stages below)
+#   (LiteLLM reads both keys from the environment; no other wiring needed.)
+#
+# NOTE: OpenRouter free model IDs change — the id below was confirmed live via
+# GET https://openrouter.ai/api/v1/models on 2026-07-26. If it 404s, re-check
+# that endpoint for the current `:free` coder id.
+#
+# Alternative free coders (one-line swap for code_developer):
+#   openrouter/nvidia/nemotron-3-ultra-550b-a55b:free   # strongest, 1M ctx, slower
+#   openrouter/cohere/north-mini-code:free              # code-specialist
+#   openrouter/poolside/laguna-m.1:free                 # code-specialist
+
+# --- Light NLP: fast + cheap (Groq) ---
+spec_discovery:
+  model: groq/llama-3.1-8b-instant
+  max_tokens: 1024
+  temperature: 0.0
+
+spec_publisher:
+  model: groq/llama-3.1-8b-instant
+  max_tokens: 512
+  temperature: 0.0
+
+# --- Reasoning / generation (Groq 70B — fits its TPM) ---
+spec_generation:
+  model: groq/llama-3.3-70b-versatile
+  max_tokens: 4096
+  temperature: 0.2
+
+namespace_resolver:
+  model: groq/llama-3.3-70b-versatile
+  max_tokens: 2048
+  temperature: 0.1
+
+# --- Code: strongest free coder (OpenRouter, request-metered so big calls fit) ---
+code_developer:
+  model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+  max_tokens: 8192
+  temperature: 0.2
