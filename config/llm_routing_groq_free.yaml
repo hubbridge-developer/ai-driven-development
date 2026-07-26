@@ -36,8 +36,12 @@ namespace_resolver:
   max_tokens: 2048
   temperature: 0.1
 
-# --- Code: strongest available on the free tier ---
+# --- Code: strongest coder in the Groq catalog ---
+# gpt-oss-120b is a 120B open-weight reasoning model — far better than llama-70b
+# at the structured, file-preserving code generation this stage needs (llama-70b
+# was returning 0 files / rewriting whole files). Verified available via
+# GET https://api.groq.com/openai/v1/models.
 code_developer:
-  model: groq/llama-3.3-70b-versatile
+  model: groq/openai/gpt-oss-120b
   max_tokens: 8192
   temperature: 0.2

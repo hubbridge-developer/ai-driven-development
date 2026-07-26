@@ -2,12 +2,10 @@ import { useState, useEffect, useCallback, useRef, type ReactNode, type Syntheti
 import { useParams } from 'react-router-dom';
 import {
   Container, Typography, Grid, Paper, Box, Alert, CircularProgress, Chip, Button,
-  Accordion, AccordionSummary, AccordionDetails, Fade,
+  Accordion, AccordionSummary, AccordionDetails,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import PaidIcon from '@mui/icons-material/Paid';
 import {
   getWorkflow,
   getWorkflowSpec,
@@ -25,6 +23,7 @@ import ApprovalDialog from '../components/ApprovalDialog';
 import CodeApprovalDialog from '../components/CodeApprovalDialog';
 import ActivityLog from '../components/ActivityLog';
 import type { LogEntry } from '../components/ActivityLog';
+import LiveMetrics from '../components/LiveMetrics';
 import type { Workflow, SpecDetail, CodeDetail } from '../types';
 
 type SnapshotSpec = Partial<SpecDetail> & {
@@ -38,17 +37,6 @@ interface PersistedLogEntry {
   detail: string;
   model: string;
   timestamp: string;
-}
-
-function formatDuration(totalSeconds: number): string {
-  const seconds = Math.max(0, Math.floor(totalSeconds));
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const remainingSeconds = seconds % 60;
-
-  if (hours > 0) return `${hours}h ${minutes}m ${remainingSeconds}s`;
-  if (minutes > 0) return `${minutes}m ${remainingSeconds}s`;
-  return `${remainingSeconds}s`;
 }
 
 /** Collapsible section — click the header to expand/collapse its details. */
@@ -102,10 +90,10 @@ export default function WorkflowDetailPage() {
   const [activityLog, setActivityLog] = useState<LogEntry[]>([]);
   const logIdRef = useRef(0);
 
-  // Live metrics: a 1s ticker advances the time display while running; the
+  // Live metrics: <LiveMetrics> owns the 1s ticker so only the chips re-render
+  // each second (the page — with its heavy spec/code panels — does not). The
   // current stage's in-progress LLM cost comes from WS so totals rise between
   // stage completions instead of jumping only at the end of each stage.
-  const [, setLiveTick] = useState(0);
   const stageStartRef = useRef<number>(Date.now());
   const [liveStageCost, setLiveStageCost] = useState(0);
 
@@ -186,13 +174,6 @@ export default function WorkflowDetailPage() {
     stageStartRef.current = Date.now();
     setLiveStageCost(0);
   }, [workflow?.current_agent]);
-
-  // Tick every second while running so the time display advances live.
-  useEffect(() => {
-    if (workflow?.status !== 'running') return;
-    const id = setInterval(() => setLiveTick((t) => t + 1), 1000);
-    return () => clearInterval(id);
-  }, [workflow?.status]);
 
   // Auto-open the section that currently needs attention.
   useEffect(() => {
@@ -422,27 +403,14 @@ export default function WorkflowDetailPage() {
         />
         {(() => {
           const tu = (workflow.token_usage || {}) as Record<string, number>;
-          const running = workflow.status === 'running';
-          const committedDur = tu.total_duration_sec || 0;
-          const committedCost = tu.total_cost_usd || 0;
-          // While running, add the current stage's live elapsed (ticks each
-          // second) and its in-progress LLM cost (pushed per sub-step via WS).
-          const liveDur = running
-            ? committedDur + (Date.now() - stageStartRef.current) / 1000
-            : committedDur;
-          const liveCost = running ? committedCost + liveStageCost : committedCost;
-          const show = running || committedDur > 0 || committedCost > 0;
           return (
-            <Fade in={show}>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Chip size="small" variant="outlined" icon={<AccessTimeIcon />}
-                  sx={{ transition: 'all .3s ease' }}
-                  label={`${formatDuration(liveDur)} total`} />
-                <Chip size="small" variant="outlined" color="secondary" icon={<PaidIcon />}
-                  sx={{ transition: 'all .3s ease' }}
-                  label={`$${liveCost.toFixed(4)} LLM`} />
-              </Box>
-            </Fade>
+            <LiveMetrics
+              status={workflow.status}
+              committedDur={tu.total_duration_sec || 0}
+              committedCost={tu.total_cost_usd || 0}
+              stageStartMs={stageStartRef.current}
+              liveStageCost={liveStageCost}
+            />
           );
         })()}
       </Box>

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Box, Typography, Paper, Alert, Chip, Stack } from '@mui/material';
 
 interface Props {
@@ -8,7 +9,9 @@ interface Props {
   consistencyWarnings?: string[];
 }
 
-export default function SpecViewer({ specContent, specId, lowConfidenceSections, duplicateWarning, consistencyWarnings }: Props) {
+// Memoized: the parent page re-renders on every WS/poll tick, but this heavy
+// section-parsing view should only re-render when its own props change.
+function SpecViewer({ specContent, specId, lowConfidenceSections, duplicateWarning, consistencyWarnings }: Props) {
   if (!specContent) {
     return (
       <Paper sx={{ p: 3 }}>
@@ -131,3 +134,5 @@ function parseSections(content: string): Record<string, unknown> {
   }
   return result;
 }
+
+export default memo(SpecViewer);
