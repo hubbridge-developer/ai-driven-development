@@ -1,0 +1,83 @@
+name: Terraform DESTROY (GCP infra)
+
+# Tears down the GCP foundation in terraform/ (GKE cluster, LoadBalancers,
+# Artifact Registry, IAM, etc.) to stop cost when the POC is idle. Manual only,
+# and guarded by a typed confirmation so it can never fire by accident.
+#
+# ⚠️  This DELETES the cluster and its in-cluster data (Postgres/Qdrant PVCs).
+#     Seeds re-run on the next Deploy, so it's fine for a POC — but there is no
+#     undo. LoadBalancer IPs will change when you recreate.
+#
+# To recreate afterwards: run the "Terraform (GCP infra)" workflow, then the
+# "Deploy to GKE" workflow.
+#
+# ── Variables:  TF_STATE_BUCKET, GCP_PROJECT_ID, GCP_REGION
+# ── Secrets:    WIF_PROVIDER, WIF_SERVICE_ACCOUNT
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "destroy" to confirm tearing down all GCP infra'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+  id-token: write        # required for Workload Identity Federation
+
+env:
+  TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
+  TF_VAR_region: ${{ vars.GCP_REGION }}
+
+jobs:
+  destroy:
+    # Hard gate: the job only runs if the operator typed exactly "destroy".
+    if: ${{ inputs.confirm == 'destroy' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (keyless)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      # Delete the Ingress + Qdrant LoadBalancer FIRST so GKE releases the GCP
+      # forwarding rules. Destroying the cluster while these exist can orphan
+      # billable LB resources — the opposite of the cost-saving goal. Best-effort:
+      # if the cluster is already gone, skip without failing the destroy.
+      - name: Release GKE LoadBalancers (best-effort)
+        continue-on-error: true
+        working-directory: .
+        run: |
+          gcloud components install gke-gcloud-auth-plugin --quiet || true
+          if gcloud container clusters get-credentials "${{ vars.GKE_CLUSTER }}" \
+               --region "${{ vars.GKE_LOCATION }}" --project "${{ vars.GCP_PROJECT_ID }}"; then
+            kubectl -n add delete ingress add-ingress --ignore-not-found
+            kubectl -n add delete svc add-qdrant-lb --ignore-not-found
+            echo "Waiting ~60s for GCP to release forwarding rules..."
+            sleep 60
+          else
+            echo "Cluster not reachable (already deleted?) — skipping LB cleanup."
+          fi
+
+      - name: Terraform init (GCS backend)
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="prefix=add/gke"
+
+      - name: Terraform destroy
+        run: terraform destroy -input=false -auto-approve -no-color
