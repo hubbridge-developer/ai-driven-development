@@ -45,6 +45,19 @@ DEFAULT_NAMESPACES = [
             "build_tool": "pip",
         },
     },
+    {
+        # Fallback domain: spec_discovery resolves here when a request matches no
+        # specific namespace. Must exist (with a repo — see seed_repositories) so
+        # code generation always has a target instead of erroring.
+        "name": "general",
+        "description": "General / catch-all domain for requests that match no specific namespace",
+        "stack_config": {
+            "language": "python",
+            "framework": "django",
+            "test_framework": "pytest",
+            "build_tool": "pip",
+        },
+    },
 ]
 
 

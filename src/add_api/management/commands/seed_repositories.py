@@ -8,7 +8,9 @@ from src.add_api.models import Namespace, Repository
 # Namespaces that should point at the configured code repo. The actual repo
 # slug is resolved from settings (GITHUB_OWNER + CODE_REPO) so a new deployment
 # only has to set env vars — no code edits.
-DEFAULT_REPO_NAMESPACES = ["auth", "user-management"]
+# Includes "general" (the fallback namespace) so requests that match no specific
+# domain still resolve to a target repo instead of erroring in code generation.
+DEFAULT_REPO_NAMESPACES = ["auth", "user-management", "general"]
 
 
 def qualify_repo(slug: str, owner: str) -> str:

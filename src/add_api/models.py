@@ -58,6 +58,8 @@ class Repository(models.Model):
 
     class Meta:
         unique_together = ["namespace", "repo_slug"]
+        verbose_name = "Repository"
+        verbose_name_plural = "Repositories"
 
     def __str__(self):
         return f"{self.repo_slug} ({self.namespace.name})"

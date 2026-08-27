@@ -9,9 +9,16 @@ class Command(BaseCommand):
     help = "Seed SpecRepoConfig from SPEC_REPO_URL env var"
 
     def handle(self, *args, **options):
+        # Prefer an explicit SPEC_REPO_URL; otherwise derive it from
+        # GITHUB_OWNER + SPEC_REPO_NAME so a deployment only needs those (already
+        # set for code publishing). Guarantees SpecRepoConfig is seeded — without
+        # it, spec_publisher can't open the spec PR.
         repo_url = settings.SPEC_REPO_URL
+        if not repo_url and settings.GITHUB_OWNER and settings.SPEC_REPO_NAME:
+            repo_url = f"https://github.com/{settings.GITHUB_OWNER}/{settings.SPEC_REPO_NAME}"
         if not repo_url:
-            self.stdout.write(self.style.WARNING("SPEC_REPO_URL not set, skipping."))
+            self.stdout.write(self.style.WARNING(
+                "No SPEC_REPO_URL and no GITHUB_OWNER/SPEC_REPO_NAME — skipping."))
             return
 
         config, created = SpecRepoConfig.objects.get_or_create(

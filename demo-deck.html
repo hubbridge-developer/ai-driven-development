@@ -1,0 +1,405 @@
+<title>ADD Sunum Planı</title>
+<style>
+  :root {
+    --bg: #0a1412;
+    --bg2: #0c1a17;
+    --surface: #0f211d;
+    --line: rgba(20,184,166,0.18);
+    --line-soft: rgba(233,241,238,0.09);
+    --teal: #2dd4bf;
+    --emerald: #34d399;
+    --pine: #0f5f5c;
+    --amber: #fbbf24;
+    --amber-deep: #f59e0b;
+    --ink: #eaf3f0;
+    --muted: #86a49b;
+    --muted2: #5f7a72;
+    --grad: linear-gradient(120deg, #0f5f5c 0%, #14b8a6 52%, #34d399 100%);
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  body::before {
+    content: "";
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(900px 520px at 88% -8%, rgba(20,184,166,0.14), transparent 60%),
+      radial-gradient(760px 460px at -6% 108%, rgba(245,158,11,0.10), transparent 58%);
+  }
+
+  /* ---- deck chrome ---- */
+  .progress {
+    position: fixed; top: 0; left: 0; height: 3px; z-index: 20;
+    background: var(--grad); width: 0;
+    transition: width .45s cubic-bezier(.2,.7,.2,1);
+  }
+  .hud {
+    position: fixed; z-index: 20; bottom: 20px; right: 22px;
+    display: flex; align-items: center; gap: 12px;
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
+  }
+  .hud button {
+    font-family: var(--mono); font-size: 13px;
+    background: var(--surface); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 9px;
+    width: 38px; height: 34px; cursor: pointer;
+    transition: border-color .2s, background .2s, transform .05s;
+  }
+  .hud button:hover { border-color: var(--teal); background: var(--bg2); }
+  .hud button:active { transform: translateY(1px); }
+  .hud button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .counter { font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+  .counter b { color: var(--ink); }
+  .hint {
+    position: fixed; z-index: 20; bottom: 22px; left: 22px;
+    font-family: var(--mono); font-size: 11px; color: var(--muted2);
+    letter-spacing: .03em;
+  }
+  .hint kbd {
+    background: var(--surface); border: 1px solid var(--line-soft);
+    border-radius: 5px; padding: 1px 6px; color: var(--muted);
+  }
+
+  /* ---- slides ---- */
+  .deck { position: relative; z-index: 1; height: 100vh; }
+  .slide {
+    position: absolute; inset: 0;
+    display: none;
+    padding: clamp(28px, 6vh, 68px) clamp(24px, 7vw, 104px);
+    flex-direction: column; justify-content: center;
+    animation: rise .5s cubic-bezier(.2,.7,.2,1);
+  }
+  .slide.active { display: flex; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .slide { animation: none; } .progress { transition: none; }
+  }
+  .wrap { width: 100%; max-width: 1080px; margin: 0 auto; }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: clamp(11px, 1.3vw, 13px);
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--teal); margin-bottom: 18px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .eyebrow::before {
+    content: ""; width: 26px; height: 2px; background: var(--grad); border-radius: 2px;
+  }
+  h1 {
+    font-size: clamp(34px, 6.4vw, 74px); line-height: 1.02; margin: 0;
+    font-weight: 800; letter-spacing: -0.03em; text-wrap: balance;
+  }
+  h2 {
+    font-size: clamp(26px, 4.2vw, 46px); line-height: 1.08; margin: 0 0 20px;
+    font-weight: 800; letter-spacing: -0.025em; text-wrap: balance;
+  }
+  .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lead {
+    font-size: clamp(17px, 2.1vw, 23px); line-height: 1.5; color: var(--muted);
+    max-width: 62ch; margin: 20px 0 0;
+  }
+  .lead strong { color: var(--ink); font-weight: 650; }
+  p { margin: 0; }
+
+  /* quote / thesis */
+  .thesis {
+    font-size: clamp(22px, 3.4vw, 40px); line-height: 1.28; font-weight: 650;
+    letter-spacing: -0.02em; text-wrap: balance; max-width: 20ch;
+  }
+  .thesis .amber { color: var(--amber); }
+  .thesis .grad { font-weight: 800; }
+  .attn { font-family: var(--mono); font-size: 13px; color: var(--muted2); margin-top: 26px; letter-spacing: .04em; }
+
+  /* cards / grids */
+  .grid { display: grid; gap: 16px; margin-top: 30px; }
+  .g2 { grid-template-columns: repeat(2, 1fr); }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 820px) { .g2, .g3 { grid-template-columns: 1fr; } }
+  .card {
+    background: linear-gradient(180deg, var(--surface), var(--bg2));
+    border: 1px solid var(--line-soft); border-radius: 16px;
+    padding: 20px 22px;
+  }
+  .card .k { font-family: var(--mono); font-size: 12px; color: var(--teal); letter-spacing: .06em; }
+  .card h3 { margin: 10px 0 6px; font-size: clamp(17px, 1.9vw, 21px); letter-spacing: -0.01em; }
+  .card p { color: var(--muted); font-size: clamp(14px, 1.5vw, 16px); line-height: 1.5; }
+
+  /* numbered flow */
+  .flow { display: flex; flex-direction: column; gap: 12px; margin-top: 26px; }
+  .step { display: flex; gap: 18px; align-items: flex-start; }
+  .step .n {
+    flex: none; width: 34px; height: 34px; border-radius: 10px;
+    display: grid; place-items: center; font-family: var(--mono); font-weight: 700;
+    background: rgba(20,184,166,0.12); color: var(--teal); border: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .step.gate .n { background: rgba(245,158,11,0.14); color: var(--amber); border-color: rgba(245,158,11,0.35); }
+  .step .t { font-size: clamp(15px, 1.7vw, 19px); line-height: 1.4; padding-top: 4px; }
+  .step .t b { color: var(--ink); }
+  .step .t span { color: var(--muted); }
+  .gate-tag {
+    font-family: var(--mono); font-size: 11px; color: var(--amber);
+    border: 1px solid rgba(245,158,11,0.35); border-radius: 6px; padding: 1px 7px; margin-left: 8px;
+    letter-spacing: .05em;
+  }
+
+  /* pipeline diagram */
+  .pipe { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 28px; }
+  .node {
+    font-family: var(--mono); font-size: clamp(11px, 1.3vw, 13px);
+    background: var(--surface); border: 1px solid var(--line-soft); color: var(--ink);
+    border-radius: 9px; padding: 8px 11px; white-space: nowrap;
+  }
+  .node.gate { background: rgba(245,158,11,0.10); border-color: rgba(245,158,11,0.4); color: var(--amber); }
+  .arw { color: var(--muted2); font-family: var(--mono); }
+
+  /* comparison table */
+  .tbl { width: 100%; border-collapse: collapse; margin-top: 26px; font-size: clamp(14px,1.6vw,17px); }
+  .tbl th, .tbl td { text-align: left; padding: 14px 16px; vertical-align: top; }
+  .tbl thead th { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .tbl tbody tr + tr td { border-top: 1px solid var(--line-soft); }
+  .tbl td:first-child { font-weight: 700; color: var(--ink); white-space: nowrap; }
+  .tbl td:last-child { color: var(--emerald); }
+  .tbl td:nth-child(2) { color: var(--muted); }
+
+  /* Q&A */
+  .qa { display: grid; gap: 14px; margin-top: 24px; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 820px) { .qa { grid-template-columns: 1fr; } }
+  .qa .q { font-weight: 700; color: var(--ink); font-size: clamp(15px,1.6vw,17px); }
+  .qa .a { color: var(--muted); font-size: clamp(13.5px,1.45vw,15.5px); line-height: 1.5; margin-top: 5px; }
+  .qa .item { background: linear-gradient(180deg, var(--surface), var(--bg2)); border: 1px solid var(--line-soft); border-radius: 14px; padding: 16px 18px; }
+
+  .pillrow { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+  .pill { font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; }
+  .pill.amber { color: var(--amber); border-color: rgba(245,158,11,0.35); }
+
+  .brandline { display: flex; align-items: center; gap: 14px; margin-bottom: 26px; }
+  .logo { width: 46px; height: 46px; border-radius: 12px; background: var(--grad); display: grid; place-items: center; font-family: var(--mono); font-weight: 800; color: #05201c; font-size: 18px; box-shadow: 0 8px 24px rgba(20,184,166,0.30); }
+  .brandline .nm { font-family: var(--mono); letter-spacing: .06em; color: var(--muted); font-size: 14px; }
+
+  .foot { margin-top: 30px; font-family: var(--mono); font-size: 13px; color: var(--muted2); }
+  .cta { color: var(--amber); }
+</style>
+
+<div class="progress" id="progress"></div>
+
+<div class="deck" id="deck">
+
+  <!-- 1 — Title -->
+  <section class="slide active">
+    <div class="wrap">
+      <div class="brandline">
+        <div class="logo">Λ</div>
+        <div class="nm">AI-DRIVEN DEVELOPMENT · ADD</div>
+      </div>
+      <div class="eyebrow">Teknik Demo · Sunum</div>
+      <h1>Tek cümleden<br><span class="grad">incelenmiş, testli bir PR'a.</span></h1>
+      <p class="lead"><strong>Spec-odaklı, çok-ajanlı bir yazılım teslim hattı.</strong> Yapay zekâ üretir, her önemli kararı bir insan onaylar. Otomatik tamamlama değil — yönetişim.</p>
+      <div class="foot">Önce göster, sonra kaputu aç &nbsp;·&nbsp; <span class="cta">→ ile ilerle</span></div>
+    </div>
+  </section>
+
+  <!-- 2 — Thesis -->
+  <section class="slide">
+    <div class="wrap">
+      <div class="eyebrow">Tek Cümle</div>
+      <p class="thesis">ADD, tek cümlelik niyeti <span class="grad">spec, kod ve testlere</span> dönüştürür — her biri bir kapıda <span class="amber">insan onaylı</span> — ve pull request'leri açar.</p>
+      <p class="attn">// Bu bir sohbet promptu değil: kalıcı durum, doğrulama, vektör hafıza, GitOps.</p>
+    </div>
+  </section>
+
+  <!-- 3 — Agenda -->
+  <section class="slide">
+    <div class="wrap">
+      <div class="eyebrow">Akış · ~25 dk</div>
+      <h2>Bugün ne göreceğiz</h2>
+      <div class="grid g3">
+        <div class="card"><div class="k">01 · 2 dk</div><h3>Kanca</h3><p>"Bir Copilot daha mı?" refleksini kır.</p></div>
+        <div class="card"><div class="k">02 · 10 dk</div><h3>Canlı Demo</h3><p>Tek cümle → birleştirmeye hazır iki PR.</p></div>
+        <div class="card"><div class="k">03 · 7 dk</div><h3>Mimari</h3><p>Mekanizma — vızıltı değil.</p></div>
+        <div class="card"><div class="k">04 · 3 dk</div><h3>Farklar</h3><p>Neden Copilot/otonom ajan değil.</p></div>
+        <div class="card"><div class="k">05 · 3 dk</div><h3>Dağıtım</h3><p>Gerçek altyapı, laptop demosu değil.</p></div>
+        <div class="card"><div class="k">06 · açık</div><h3>Soru-Cevap</h3><p>Zor sorular için hazırız.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 — Demo flow -->
+  <section class="slide">
+    <div class="wrap">
+      <div class="eyebrow">Canlı Demo</div>
+      <h2>Tek cümle, uçtan uca</h2>
+      <div class="flow">
+        <div class="step"><div class="n">1</div><div class="t"><b>Giriş & prompt.</b> <span>"Let users check if a username is already taken." — tüm girdi bu.</span></div></div>
+        <div class="step"><div class="n">2</div><div class="t"><b>Spec Discovery.</b> <span>Qdrant vektör hafızasında ilgili spec'ler + kopya tespiti.</span></div></div>
+        <div class="step"><div class="n">3</div><div class="t"><b>Üretim & Doğrulama.</b> <span>Yapılandırılmış spec + deterministik kontroller.</span></div></div>
+        <div class="step gate"><div class="n">✋</div><div class="t"><b>Kapı #1 — Spec onayı</b><span class="gate-tag">İNSAN</span> <span>→ git'te versiyonlu spec PR'ı açılır.</span></div></div>
+        <div class="step"><div class="n">4</div><div class="t"><b>Code Developer.</b> <span>Etki analizi → planla, yaz, test et, entegrasyon, lint, çalıştır, onar. Koruma kontrolü yıkıcı düzenlemeyi bloklar.</span></div></div>
+        <div class="step gate"><div class="n">✋</div><div class="t"><b>Kapı #2 — Kod onayı</b><span class="gate-tag">İNSAN</span> <span>testler geçmezse PR taslak kalır → kod PR'ı açılır.</span></div></div>
+        <div class="step"><div class="n">✓</div><div class="t"><b>Sonuç.</b> <span>Spec + kod + testler + iki PR. Her adım incelenebilir; süre & maliyet canlı.</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 — Pipeline -->
+  <section class="slide">
+    <div class="wrap">
+      <div class="eyebrow">Mimari · Hat</div>
+      <h2>10 aşamalı LangGraph durum makinesi</h2>
+      <div class="pipe">
+        <span class="node">spec_discovery</span><span class="arw">→</span>
+        <span class="node">spec_generator</span><span class="arw">→</span>
+        <span class="node">spec_validator</span><span class="arw">→</span>
+        <span class="node gate">✋ SPEC KAPISI</span><span class="arw">→</span>
+        <span class="node">spec_publisher</span><span class="arw">→</span>
+        <span class="node">namespace_resolver</span><span class="arw">→</span>
+        <span class="node">code_developer</span><span class="arw">→</span>
+        <span class="node">code_publisher</span><span class="arw">→</span>
+        <span class="node gate">✋ KOD KAPISI</span><span class="arw">→</span>
+        <span class="node">code_review_handoff</span><span class="arw">→</span>
+        <span class="node">merge</span>
+      </div>
+      <p class="lead" style="margin-top:32px">Durum her aşamada <strong>Postgres'e</strong> yazılır — onaylar saatler sonra gelebilir, graph DB anlık görüntüsünden <strong>devam eder</strong>. Yeniden başlatmaya dayanıklı.</p>
+    </div>
+  </section>
+
+  <!-- 6 — 5 pillars -->
+  <section class="slide">
+    <div class="wrap">
+      <div class="eyebrow">Mimari · Bunu gerçek kılan</div>
+      <h2>Beş temel</h2>
+      <div class="grid g2">
+        <div class="card"><div class="k">01 · DURUM</div><h3>Kalıcı & devam ettirilebilir</h3><p>Postgres'te state_snapshot + token_usage (JSON). Süreç yeniden başlatmayı atlatır.</p></div>
+        <div class="card"><div class="k">02 · HAFIZA</div><h3>Qdrant çift-vektör</h3><p>İçerik + özet gömme. Anlamla ilgili spec getirir, kopyayı işaretler.</p></div>
+        <div class="card"><div class="k">03 · YÖNETİŞİM</div><h3>İnsan-döngüde kapılar</h3><p>Spec ve kod için iki sert durak. Otonom birleştirme yok.</p></div>
+        <div class="card"><div class="k">04 · DETERMİNİZM</div><h3>Kontrol edilir, güvenilmez</h3><p>Doğrulayıcılar, koruma kontrolü ve testleri gerçekten çalıştırmak.</p></div>
+      </div>
+      <div class="pillrow">
+        <span class="pill amber">05 · LiteLLM</span>
+        <span class="pill">Her ajan → farklı model</span>
+        <span class="pill">Gemini → Claude → yerel · sıfır kod değişikliği</span>
+        <span class="pill">Sağlayıcı kilidi yok</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 — Differentiators -->
+  <section class="slide">
+    <div class="wrap">
+      <div class="eyebrow">Farklılaştırıcılar</div>
+      <h2>Neden "X" değil?</h2>
+      <table class="tbl">
+        <thead><tr><th>Araç</th><th>Ne yapar</th><th>ADD ne ekler</th></tr></thead>
+        <tbody>
+          <tr><td>Copilot / Cursor</td><td>Editör içi otomatik tamamlama</td><td>Bir hat: spec, kapılar, testler, PR'lar, hafıza</td></tr>
+          <tr><td>Otonom ajanlar</td><td>Serbest koşar, umut eder</td><td>Yönetişim — her geri dönülemez adım kapılı</td></tr>
+          <tr><td>Ham ChatGPT</td><td>Tek seferlik üretim</td><td>Kalıcı durum, doğrulama, vektör hafıza, GitOps</td></tr>
+        </tbody>
+      </table>
+      <p class="thesis grad" style="margin-top:34px; font-size:clamp(20px,2.8vw,32px)">"Onlar kod üretir. Biz yönetilen bir teslim hattı üretiriz."</p>
+    </div>
+  </section>
+
+  <!-- 8 — Deployment -->
+  <section class="slide">
+    <div class="wrap">
+      <div class="eyebrow">Dağıtım & Operasyon</div>
+      <h2>Gerçek altyapı, anahtarsız</h2>
+      <div class="grid g3">
+        <div class="card"><div class="k">ALTYAPI</div><h3>GKE + Terraform</h3><p>GKE Autopilot, IaC, uzak durum GCS'te. Tekrarlanabilir.</p></div>
+        <div class="card"><div class="k">KİMLİK</div><h3>Anahtarsız her yerde</h3><p>CI → GCP: Workload Identity Federation. Pod → Vertex: Workload Identity. Kümede API anahtarı yok.</p></div>
+        <div class="card"><div class="k">CI/CD</div><h3>Üç GitHub Actions</h3><p>Altyapı · dağıtım · korumalı yıkım. Yalnızca CI dağıtır — laptop'tan push yok.</p></div>
+      </div>
+      <p class="lead" style="margin-top:26px">Django 5 · DRF · Channels/Daphne · Redis · PostgreSQL · Qdrant · LangGraph · LiteLLM · React/Vite/MUI</p>
+    </div>
+  </section>
+
+  <!-- 9 — Q&A -->
+  <section class="slide">
+    <div class="wrap">
+      <div class="eyebrow">Soru-Cevap · Cephanelik</div>
+      <h2>Zor sorular</h2>
+      <div class="qa">
+        <div class="item"><div class="q">Bozuk/halüsinasyon kodu?</div><div class="a">Üç katman: doğrulayıcılar, yıkıcı düzenlemeyi bloklayan koruma, ve testleri gerçekten çalıştırmak. Geçmezse PR taslak.</div></div>
+        <div class="item"><div class="q">Copilot'tan farkı?</div><div class="a">Copilot editörde üretir. ADD kodun etrafındaki hattı yönetir — spec, inceleme, test, PR, hafıza.</div></div>
+        <div class="item"><div class="q">Maliyet?</div><div class="a">Aşama başına takip, arayüzde canlı. Ucuz modeli kolay aşamaya, güçlüyü kod aşamasına.</div></div>
+        <div class="item"><div class="q">Sağlayıcı kilidi?</div><div class="a">LiteLLM. Gemini/Claude/yerel — bir YAML satırı. Ollama, Groq, OpenRouter, Vertex'te çalıştı.</div></div>
+        <div class="item"><div class="q">Veri gizliliği?</div><div class="a">Vertex ile çağrılar sizin projenizde/bölgenizde, sizin IAM'inizde. Kümeden anahtar çıkmaz.</div></div>
+        <div class="item"><div class="q">Mevcut kodu güvenle değiştirir mi?</div><div class="a">Etki analizi dosyayı seçer; koruma kontrolü mevcut route/tanımı kaldıran düzenlemeyi reddeder (deterministik).</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 — Closing -->
+  <section class="slide">
+    <div class="wrap">
+      <div class="eyebrow">Kapanış</div>
+      <p class="thesis">Vaat "AI kod yazar" değil.<br><span class="grad">"AI teslim hattınızı yürütür,</span> <span class="amber">bir insan önemli olan her kararı onaylar."</span></p>
+      <p class="lead">Spec-odaklı · testli · kapılı · gerçek IaC ile dağıtılmış. Bir demo ile kod tabanınıza yaklaştıracağınız bir sistem arasındaki fark.</p>
+      <div class="foot cta">→ Gerçek bir depoda pilot. Konuşalım.</div>
+    </div>
+  </section>
+
+</div>
+
+<div class="hint">Gezinme: <kbd>←</kbd> <kbd>→</kbd> / <kbd>boşluk</kbd> · <kbd>F</kbd> tam ekran</div>
+<div class="hud">
+  <span class="counter"><b id="cur">1</b> / <span id="tot">10</span></span>
+  <button id="prev" aria-label="Önceki slayt">←</button>
+  <button id="next" aria-label="Sonraki slayt">→</button>
+  <button id="fs" aria-label="Tam ekran">⤢</button>
+</div>
+
+<script>
+  (function () {
+    var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+    var i = 0;
+    var progress = document.getElementById('progress');
+    var cur = document.getElementById('cur');
+    document.getElementById('tot').textContent = slides.length;
+
+    function show(n) {
+      i = Math.max(0, Math.min(slides.length - 1, n));
+      slides.forEach(function (s, idx) { s.classList.toggle('active', idx === i); });
+      progress.style.width = ((i + 1) / slides.length * 100) + '%';
+      cur.textContent = i + 1;
+    }
+    function next() { show(i + 1); }
+    function prev() { show(i - 1); }
+
+    document.getElementById('next').addEventListener('click', next);
+    document.getElementById('prev').addEventListener('click', prev);
+    document.getElementById('fs').addEventListener('click', function () {
+      if (!document.fullscreenElement) { (document.documentElement.requestFullscreen || function(){})(); }
+      else { (document.exitFullscreen || function(){})(); }
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
+      else if (e.key === 'Home') { show(0); }
+      else if (e.key === 'End') { show(slides.length - 1); }
+      else if (e.key === 'f' || e.key === 'F') {
+        if (!document.fullscreenElement) { (document.documentElement.requestFullscreen || function(){})(); }
+        else { (document.exitFullscreen || function(){})(); }
+      }
+    });
+
+    // click right/left third of screen to advance (handy when presenting)
+    document.getElementById('deck').addEventListener('click', function (e) {
+      if (e.target.closest('a, button')) return;
+      if (e.clientX > window.innerWidth * 0.62) next();
+      else if (e.clientX < window.innerWidth * 0.38) prev();
+    });
+
+    show(0);
+  })();
+</script>

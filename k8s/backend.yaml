@@ -49,14 +49,20 @@ spec:
           command:
             - sh
             - -c
-            - >
-              python manage.py migrate --noinput &&
-              python manage.py collectstatic --noinput &&
-              (python manage.py createsuperuser --noinput || true) &&
-              python manage.py qdrant_create_collection &&
-              python manage.py seed_namespaces &&
-              python manage.py seed_spec_repo &&
-              python manage.py seed_repositories
+            # migrate + collectstatic are hard gates (must succeed). The seeds run
+            # INDEPENDENTLY (each its own line) so one failing seed can't skip the
+            # rest — the original cause of the empty repo/spec-config tables.
+            - |
+              set -e
+              python manage.py migrate --noinput
+              python manage.py collectstatic --noinput
+              set +e
+              python manage.py createsuperuser --noinput || true
+              python manage.py qdrant_create_collection || true
+              python manage.py seed_namespaces || true
+              python manage.py seed_spec_repo || true
+              python manage.py seed_repositories || true
+              true
           envFrom:
             - configMapRef: { name: add-config }
             - secretRef: { name: add-secrets }

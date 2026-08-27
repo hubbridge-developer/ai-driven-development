@@ -1,0 +1,149 @@
+<title>ADD Demo Kopya Kâğıdı</title>
+<style>
+  :root {
+    --ink: #16211e;
+    --muted: #5a6b66;
+    --line: #d9e2df;
+    --teal: #0d7d72;
+    --emerald: #0f9d63;
+    --amber: #b45309;
+    --amber-bg: #fdf3e3;
+    --teal-bg: #eaf5f2;
+    --paper: #ffffff;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: #eef1f0;
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    padding: 22px;
+  }
+  .sheet {
+    background: var(--paper);
+    max-width: 900px; margin: 0 auto;
+    padding: 26px 30px 22px;
+    border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(20,40,35,0.10);
+  }
+
+  header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; border-bottom: 2px solid var(--ink); padding-bottom: 12px; }
+  .title { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+  .title small { display:block; font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--teal); margin-bottom: 3px; }
+  .meta { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: right; line-height: 1.7; }
+  .meta b { color: var(--ink); }
+  .meta .kv span { color: var(--teal); }
+
+  .band { display: flex; gap: 10px; margin: 12px 0 16px; flex-wrap: wrap; }
+  .chip { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line); border-radius: 7px; padding: 5px 10px; background: var(--teal-bg); }
+  .chip b { color: var(--teal); }
+  .chip.prompt { background: var(--amber-bg); }
+  .chip.prompt b { color: var(--amber); }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 0 10px 6px; }
+  td { vertical-align: top; padding: 7px 10px; border-top: 1px solid var(--line); font-size: 12.5px; line-height: 1.4; }
+  tr td:first-child { width: 42%; }
+  .n { display:inline-grid; place-items:center; width: 19px; height: 19px; border-radius: 6px; background: var(--teal); color: #fff; font-family: var(--mono); font-weight: 700; font-size: 11px; margin-right: 8px; vertical-align: middle; }
+  .n.gate { background: var(--amber); }
+  .n.ok { background: var(--emerald); }
+  .click b { color: var(--ink); }
+  .click code { font-family: var(--mono); font-size: 11.5px; background: #f1f4f3; padding: 1px 5px; border-radius: 4px; }
+  .say { color: #223; }
+  .say em { color: var(--muted); font-style: normal; }
+  tr.gate td { background: var(--amber-bg); }
+  .tag { font-family: var(--mono); font-size: 9.5px; color: var(--amber); border: 1px solid #e6c79a; border-radius: 5px; padding: 0 5px; margin-left: 4px; }
+
+  .foot { margin-top: 14px; border-top: 2px solid var(--ink); padding-top: 10px; }
+  .foot h4 { margin: 0 0 7px; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--amber); }
+  .fb { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 22px; font-size: 11.5px; line-height: 1.4; }
+  .fb div b { color: var(--ink); }
+  .fb div { color: var(--muted); }
+
+  .printbtn { display:block; margin: 16px auto 0; font-family: var(--mono); font-size: 12px; background: var(--ink); color:#fff; border:0; border-radius: 8px; padding: 9px 16px; cursor: pointer; }
+
+  @media print {
+    body { background: #fff; padding: 0; font-size: 11px; }
+    .sheet { box-shadow: none; border-radius: 0; max-width: none; padding: 0 6mm; }
+    .printbtn { display: none; }
+    td { padding: 5px 8px; font-size: 11px; }
+    @page { size: A4; margin: 10mm; }
+  }
+</style>
+
+<div class="sheet">
+  <header>
+    <div class="title"><small>AI-Driven Development · Demo</small>Kopya Kâğıdı</div>
+    <div class="meta">
+      <div class="kv"><b>Giriş:</b> demo@add.ai · demo1234</div>
+      <div class="kv"><b>App:</b> http://______ · <b>Swagger:</b> /api/v1/docs · <b>Admin:</b> /admin/</div>
+      <div class="kv"><b>Sağlayıcı:</b> <span>Vertex / Gemini</span></div>
+    </div>
+  </header>
+
+  <div class="band">
+    <span class="chip prompt"><b>PROMPT →</b> "Let users check if a username is already taken."</span>
+    <span class="chip"><b>Sekmeler:</b> App · GitHub PR'lar · Swagger</span>
+  </div>
+
+  <table>
+    <thead><tr><th>Tıkla / Yap</th><th>Söyle</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="click"><span class="n">1</span><b>Giriş</b> → <code>Use demo credentials</code> → <code>Sign in</code></td>
+        <td class="say">"Önce giriş. Demo için kozmetik bir kapı — gerçek SSO bir konfigürasyon, yeniden yazım değil." <em>(fazla durma)</em></td>
+      </tr>
+      <tr>
+        <td class="click"><span class="n">2</span>Promptu yaz → <b>Gönder</b></td>
+        <td class="say">"Tüm girdi bu. <b>Tek cümle.</b>"</td>
+      </tr>
+      <tr>
+        <td class="click"><span class="n">3</span>Spec Discovery çalışırken</td>
+        <td class="say">"Niyeti çözer, sonra <b>Qdrant vektör hafızasında</b> ilgili spec'leri arar ve <b>kopyaları</b> tespit eder. Sistemin hafızası — zaten spec'lediğinizi tekrar icat etmez."</td>
+      </tr>
+      <tr>
+        <td class="click"><span class="n">4</span>Generation → Validation</td>
+        <td class="say">"Yapılandırılmış spec yazar, sonra <b>deterministik doğrulayıcılar</b> çalıştırır — 'LLM iyi diyor' değil, gerçek kontroller."</td>
+      </tr>
+      <tr class="gate">
+        <td class="click"><span class="n gate">✋</span><b>KAPI #1</b> → <code>Approve</code> → GitHub sekmesi<span class="tag">İNSAN</span></td>
+        <td class="say">"İlk <b>insan kapısı</b>. AI önerir, insan karar verir." Onayla → "Spec artık <b>git'te versiyonlu</b> — kaynak spec, geçici prompt değil."</td>
+      </tr>
+      <tr>
+        <td class="click"><span class="n">5</span>Namespace Resolver → Code Developer</td>
+        <td class="say">"Depoyu tarar, <b>etki analizi</b> yapar, sonra: planla → yaz → test → entegrasyon → lint → çalıştır → onar. <b>Koruma kontrolü</b> mevcut route/fonksiyonu silen düzenlemeyi bloklar."</td>
+      </tr>
+      <tr class="gate">
+        <td class="click"><span class="n gate">✋</span><b>KAPI #2</b> → <code>Approve</code> → GitHub sekmesi<span class="tag">İNSAN</span></td>
+        <td class="say">"İkinci kapı. Testler çalıştı — geçmezse PR <b>taslak</b> açılır, sistem doğrulanmamış kodu bitmiş göstermez." Onayla → "kod PR'ı."</td>
+      </tr>
+      <tr>
+        <td class="click"><span class="n">6</span>Başlıktaki süre + maliyet çipleri</td>
+        <td class="say">"Her aşama kendi <b>süresini ve LLM maliyetini</b> takip eder — tam şeffaflık."</td>
+      </tr>
+      <tr>
+        <td class="click"><span class="n">7</span>Swagger sekmesi (ops. <code>Try it out</code>)</td>
+        <td class="say">"Yeni uç nokta <b>API dokümanlarında canlı.</b>"</td>
+      </tr>
+      <tr>
+        <td class="click"><span class="n ok">✓</span><b>Kapat</b></td>
+        <td class="say">"Tek cümle girdi — versiyonlu spec, çalışan kod, testler ve <b>iki PR</b> çıktı. Her adım incelenebilir, her karar bir insan tarafından kapılandı."</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="foot">
+    <h4>Demo bozulursa — sakin kal</h4>
+    <div class="fb">
+      <div><b>Aşama hata verirse:</b> "Kapılar bu yüzden var." → yedek kayıt/ekran görüntüsüne geç.</div>
+      <div><b>Testler geçmezse:</b> "PR'ı taslak açtı — sistem sizi koruyor." (hata değil, özellik)</div>
+      <div><b>Kod aşaması yavaşsa:</b> beklerken mimariyi anlat — 10 aşama, 2 kapı, LiteLLM yönlendirme.</div>
+      <div><b>Model 404 / 403:</b> sağlayıcı bir konfig çevirmesi — ama bu gece test et, canlıda olmasın.</div>
+    </div>
+  </div>
+</div>
+
+<button class="printbtn" onclick="window.print()">⎙ Yazdır / PDF olarak kaydet</button>
