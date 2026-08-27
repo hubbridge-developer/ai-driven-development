@@ -70,8 +70,12 @@ def spec_discovery_agent(state: WorkflowState) -> dict:
             notify_sub_step(workflow_id, "spec_discovery", "Namespace Resolution",
                             detail=f"Matched: {', '.join(identified_namespaces)}")
         else:
+            # Fall back to the 'general' namespace so code generation always has a
+            # target repo (see seed_namespaces/seed_repositories). Without this the
+            # list stays empty and namespace_resolver finds no repositories.
+            identified_namespaces = ["general"]
             notify_sub_step(workflow_id, "spec_discovery", "Namespace Resolution",
-                            detail="No namespace match — will use 'general'")
+                            detail="No namespace match — using 'general'")
 
         # Step 3: Optionally expand query for better recall
         search_query = user_request
