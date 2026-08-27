@@ -25,9 +25,12 @@ data:
   #              NOT offered in every region (some require prepay billing).
   #   "vertex" — GCP-billed. Uses GKE Workload Identity (no key) via add-vertex SA.
   #   "claude" — needs ANTHROPIC_API_KEY in the Secret.
-  # Currently active: openrouter hybrid (free, and the code stage actually fits).
-  LLM_PROVIDER: "openrouter"
-  LLM_ROUTING_CONFIG: "config/llm_routing_openrouter.yaml"
+  # Currently active: vertex (paid Google Gemini — for the customer demo).
+  # To revert to FREE: set these back to
+  #   LLM_PROVIDER: "openrouter"
+  #   LLM_ROUTING_CONFIG: "config/llm_routing_openrouter.yaml"
+  LLM_PROVIDER: "vertex"
+  LLM_ROUTING_CONFIG: "config/llm_routing_vertex.yaml"
   # --- Vertex settings (used only when LLM_PROVIDER=vertex) ---
   VERTEX_PROJECT: "ai-driven-development-503519"
   VERTEX_LOCATION: "us-central1"
