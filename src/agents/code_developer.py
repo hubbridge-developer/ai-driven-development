@@ -46,7 +46,8 @@ def code_developer_agent(state: WorkflowState) -> dict:
 
     from src.agents.sub_agents.task_planner import plan_tasks
     implementation_tasks = plan_tasks(generated_spec, affected_files, stack_config,
-                                      rejection_feedback=rejection_feedback)
+                                      rejection_feedback=rejection_feedback,
+                                      repo_context=code_context)
 
     if not implementation_tasks:
         notify_sub_step(workflow_id, "code_developer", "Task Planning", spec_id=spec_id,

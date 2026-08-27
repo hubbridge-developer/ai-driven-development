@@ -11,15 +11,27 @@ TASK_PLANNER_PROMPT = """You are a senior software engineer decomposing a specif
 SPECIFICATION:
 {spec_content}
 
+REPOSITORY STRUCTURE (the ACTUAL files/folders in the target repo):
+{repo_context}
+
 AFFECTED FILES:
 {affected_files}
 
 STACK: {stack_config}
 {rejection_feedback}
-Break this specification into ordered implementation tasks. Each task should:
-1. Map to specific files (create or modify)
-2. Have clear dependencies (models before views, etc.)
-3. Be small enough for a single focused code change
+Break this specification into ordered implementation tasks. CRITICAL rules:
+1. Use ONLY directories/apps that already appear in the REPOSITORY STRUCTURE
+   above. Do NOT invent a new app or folder named after the domain — put new
+   files inside the EXISTING app directory shown in the file tree (e.g. if the
+   tree shows `accounts/`, use `accounts/`, never a made-up `auth/`).
+2. To expose a NEW URL route, register it in the project's EXISTING root URLconf
+   from the file tree (the `<project>/urls.py` that includes the app urls), so
+   the route is actually reachable — a route added only to an app's urls that is
+   not included will 404.
+3. Put tests in the same app's existing test location shown in the tree.
+4. Use the FEWEST tasks possible. A simple endpoint is usually 1–2 tasks, not 5.
+   Do not split trivial work into separate tasks.
+5. Order by dependency (models before views, views before urls).
 
 Respond in JSON format ONLY:
 {{
@@ -42,7 +54,8 @@ Respond in JSON format ONLY:
 
 
 def plan_tasks(spec_content: str, affected_files: list[dict],
-               stack_config: dict, rejection_feedback: str = "") -> list[dict]:
+               stack_config: dict, rejection_feedback: str = "",
+               repo_context: str = "") -> list[dict]:
     """Decompose spec into ordered implementation tasks."""
     logger.info("task_planner_start", affected_files=len(affected_files))
 
@@ -61,7 +74,8 @@ def plan_tasks(spec_content: str, affected_files: list[dict],
 
     prompt = TASK_PLANNER_PROMPT.format(
         spec_content=spec_content[:3000],
-        affected_files=af_str,
+        repo_context=(repo_context or "(no repository structure available)")[:2500],
+        affected_files=af_str or "(none — this is likely a NEW feature; add files to the existing app)",
         stack_config=json.dumps(stack_config),
         rejection_feedback=feedback_section,
     )
