@@ -32,6 +32,12 @@ spec:
       containers:
         - name: frontend
           image: add-frontend:latest       # overridden by kustomization images:
+          env:
+            # Disable Vite HMR behind the GCE LB so its ~30s idle cut doesn't
+            # trigger a full-page reload every ~30 seconds. (Real fix: serve a
+            # static nginx build — see README "Production hardening".)
+            - name: VITE_DISABLE_HMR
+              value: "1"
           ports:
             - containerPort: 5173
           readinessProbe:
