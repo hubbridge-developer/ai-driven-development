@@ -29,9 +29,12 @@ Break this specification into ordered implementation tasks. CRITICAL rules:
    the route is actually reachable — a route added only to an app's urls that is
    not included will 404.
 3. Put tests in the same app's existing test location shown in the tree.
-4. Use the FEWEST tasks possible. A simple endpoint is usually 1–2 tasks, not 5.
+4. Do NOT create or modify test files (test_*.py or files under a `tests/`
+   directory). Tests are generated automatically in a separate step — produce
+   ONLY implementation files (models, serializers, views, urls).
+5. Use the FEWEST tasks possible. A simple endpoint is usually 1–2 tasks, not 5.
    Do not split trivial work into separate tasks.
-5. Order by dependency (models before views, views before urls).
+6. Order by dependency (models before views, views before urls).
 
 Respond in JSON format ONLY:
 {{

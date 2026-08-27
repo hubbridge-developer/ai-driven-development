@@ -6,6 +6,19 @@ from src.graph.state import WorkflowState
 logger = structlog.get_logger()
 
 
+def _is_test_file(path: str) -> bool:
+    """True for pytest/Django test files — those are owned by the Test Writing
+    step, not the code writer (see test-dedup in code_developer_agent)."""
+    p = (path or "").lower()
+    name = p.rsplit("/", 1)[-1]
+    return (
+        "/tests/" in p
+        or name.startswith("test_")
+        or name.endswith("_test.py")
+        or name == "tests.py"
+    )
+
+
 def code_developer_agent(state: WorkflowState) -> dict:
     """Stage 6: Orchestrate code implementation via 5 sub-agents."""
     from src.graph.workflow import notify_sub_step  # late import to avoid circular dependency
@@ -114,6 +127,15 @@ def code_developer_agent(state: WorkflowState) -> dict:
             if existing:
                 all_generated_files.remove(existing)
             all_generated_files.append(f)
+
+    # test-dedup: tests come ONLY from the dedicated Test Writing step below.
+    # Drop any test files the code writer produced so two versions of the same
+    # test file can't collide and contradict each other in the integration review.
+    _dropped = [f for f in all_generated_files if _is_test_file(f["path"])]
+    if _dropped:
+        all_generated_files = [f for f in all_generated_files if not _is_test_file(f["path"])]
+        notify_sub_step(workflow_id, "code_developer", "Code Writing", spec_id=spec_id,
+                        detail=f"Excluded {len(_dropped)} test file(s) — the Test Writing step owns tests")
 
     notify_sub_step(workflow_id, "code_developer", "Code Writing", spec_id=spec_id,
                     detail=f"Code generation complete — {len(all_generated_files)} total file(s)")
