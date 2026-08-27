@@ -1,6 +1,18 @@
 # Frontend SPA. Uses the existing frontend image (vite) on 5173.
 # For production, build a static image (node build -> nginx) and serve on 80;
 # see k8s/README.md "Production hardening".
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: add-frontend-backendconfig
+  namespace: add
+spec:
+  # Raise the LB backend timeout well past the ~30s default so idle connections
+  # (incl. Vite's HMR socket) aren't cut every 30s — the cut+reconnect is what
+  # makes the dev server reload the whole page. Belt-and-suspenders with the
+  # VITE_DISABLE_HMR env below.
+  timeoutSec: 3600
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,6 +21,7 @@ metadata:
   labels: { app: add-frontend }
   annotations:
     cloud.google.com/neg: '{"ingress": true}'   # container-native LB for GKE Ingress
+    cloud.google.com/backend-config: '{"default": "add-frontend-backendconfig"}'
 spec:
   selector: { app: add-frontend }
   ports:
